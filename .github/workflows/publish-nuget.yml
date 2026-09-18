@@ -7,56 +7,61 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Package version to publish, for example 0.1.0"
-        required: true
+        description: "Package version to publish (for example 0.3.0 or 0.3.0-alpha.1). Overrides the version MinVer derives from tags."
+        required: false
         type: string
 
 permissions:
   contents: read
-  id-token: write
+  id-token: write # required by NuGet trusted publishing
 
 jobs:
   publish:
-    name: Pack and publish
+    name: Build, test, pack and publish
     runs-on: windows-latest
+    env:
+      MinVerVersionOverride: ${{ inputs.version }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # MinVer computes the version from tags and history
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          global-json-file: global.json
 
-      - name: Resolve package version
-        id: version
+      - name: Validate version override
+        if: env.MinVerVersionOverride != ''
         shell: pwsh
         run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $version = "${{ inputs.version }}"
-          } else {
-            $version = "${{ github.ref_name }}" -replace '^v', ''
+          if ($env:MinVerVersionOverride -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            throw "Version '$env:MinVerVersionOverride' is not a valid NuGet package version."
           }
-
-          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
-            throw "Version '$version' is not a valid NuGet package version."
-          }
-
-          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore CESDK.sln
+        run: dotnet restore CESDK.slnx
+
+      - name: Build (Release)
+        run: dotnet build CESDK.slnx --no-restore -c Release
+
+      # The full test run gates the publish: a broken package must never reach nuget.org.
+      - name: Test
+        run: dotnet test --solution CESDK.slnx --no-build -c Release
 
       - name: Pack
-        run: dotnet pack CESDK.csproj -c Release --no-restore -o artifacts /p:PackageVersion=${{ steps.version.outputs.version }}
+        run: dotnet pack src/CESDK -c Release -o artifacts/nuget
 
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v6
+      - name: Upload package
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-package
-          path: artifacts/*
+          path: artifacts/nuget/*.nupkg
+          retention-days: 90
 
+      # The user is the nuget.org account that registered this repository and workflow as a trusted publisher.
       - name: NuGet login
         uses: NuGet/login@v1
         id: login
@@ -65,7 +70,6 @@ jobs:
 
       - name: Publish to NuGet
         shell: pwsh
-        run: |
-          Get-ChildItem -Path artifacts -Filter "*.nupkg" | ForEach-Object {
-            dotnet nuget push $_.FullName --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
-          }
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "artifacts/nuget/*.nupkg" --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate

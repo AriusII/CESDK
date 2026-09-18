@@ -1,48 +1,64 @@
-name: SonarQube
+name: Build and test
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Build and analyze
+    name: Build, test and pack
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: "10.0.x"
-      - name: Cache SonarQube Cloud packages
-        uses: actions/cache@v6
-        with:
-          path: ~\.sonar\cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache SonarQube Cloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v6
-        with:
-          path: .\.sonar\scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
-      - name: Install SonarQube Cloud scanner
-        shell: pwsh
-        run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory -Force
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $PSNativeCommandUseErrorActionPreference = $true
+          fetch-depth: 0 # MinVer computes the version from tags and history
 
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"shadowninex_CESDK" /o:"shadowninex" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build --no-incremental
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore CESDK.slnx
+
+      # The tests run against Debug because some guards exist only there. Release is what ships.
+      - name: Build (Debug)
+        run: dotnet build CESDK.slnx --no-restore -c Debug
+
+      - name: Build (Release)
+        run: dotnet build CESDK.slnx --no-restore -c Release
+
+      # Tests tagged Category=NativeLua need a Lua 5.3 DLL (see tests/CESDK.Tests.Shared/README.md) and report Skipped on this runner.
+      - name: Test
+        run: >-
+          dotnet test --solution CESDK.slnx --no-build -c Debug
+          --report-trx --results-directory artifacts/test-results
+          --coverage --coverage-output-format cobertura
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: artifacts/test-results
+          retention-days: 14
+
+      - name: Pack
+        run: dotnet pack src/CESDK -c Release -o artifacts/nuget
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-package
+          path: artifacts/nuget/*.nupkg
+          retention-days: 14
