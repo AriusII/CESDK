@@ -49,17 +49,16 @@ internal static class LuaGlobalTables
     {
         members.Sort(static (left, right) => string.CompareOrdinal(left.SortKey, right.SortKey));
 
-        HashSet<string> distinct = new(StringComparer.Ordinal);
+        // The sorted set is the list of distinct names in ordinal order, so nothing is sorted afterwards.
+        SortedSet<string> globals = new(StringComparer.Ordinal);
         List<LuaGlobalCallModel> calls = new(members.Count);
         foreach (var member in members)
         {
             var call = member.Call!;
             calls.Add(call);
-            distinct.Add(call.GlobalName);
+            globals.Add(call.GlobalName);
         }
 
-        List<string> globals = [.. distinct];
-        globals.Sort(StringComparer.Ordinal);
         return new LuaGlobalTableModel(
             members[0].ContainingType,
             new EquatableArray<string>([.. globals]),
