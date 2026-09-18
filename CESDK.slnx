@@ -77,4 +77,76 @@
     <Project Path="tests/CESDK.Tests/CESDK.Tests.csproj"/>
     <Project Path="tests/CESDK.Tests.Shared/CESDK.Tests.Shared.csproj"/>
   </Folder>
+  <Folder Name="/exemples/">
+    <File Path="exemples/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/01-first-plugin/">
+    <File Path="exemples/01-first-plugin/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/02-lua-functions/">
+    <File Path="exemples/02-lua-functions/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/03-calling-cheat-engine/">
+    <File Path="exemples/03-calling-cheat-engine/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/04-memory/">
+    <File Path="exemples/04-memory/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/05-aob-scans/">
+    <File Path="exemples/05-aob-scans/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/06-value-scans/">
+    <File Path="exemples/06-value-scans/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/07-address-list/">
+    <File Path="exemples/07-address-list/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/08-running-lua/">
+    <File Path="exemples/08-running-lua/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/09-main-thread/">
+    <File Path="exemples/09-main-thread/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/10-logging-and-errors/">
+    <File Path="exemples/10-logging-and-errors/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/11-diagnostics/">
+    <File Path="exemples/11-diagnostics/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/12-trainer/">
+    <File Path="exemples/12-trainer/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/api/">
+    <File Path="exemples/api/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/">
+    <File Path="exemples/recipes/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/assembly/">
+    <File Path="exemples/recipes/assembly/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/cheat-tables/">
+    <File Path="exemples/recipes/cheat-tables/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/dbvm/">
+    <File Path="exemples/recipes/dbvm/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/debugger/">
+    <File Path="exemples/recipes/debugger/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/injection/">
+    <File Path="exemples/recipes/injection/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/processes/">
+    <File Path="exemples/recipes/processes/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/speed-and-hashing/">
+    <File Path="exemples/recipes/speed-and-hashing/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/structures/">
+    <File Path="exemples/recipes/structures/README.md"/>
+  </Folder>
+  <Folder Name="/exemples/recipes/symbols/">
+    <File Path="exemples/recipes/symbols/README.md"/>
+  </Folder>
 </Solution>
