@@ -38,25 +38,28 @@ internal static class LuaBindingsDeclaredDiagnosticIds
     /// </summary>
     public static string Collect(IMethodSymbol method)
     {
-        List<string>? ids = null;
-        CollectFrom(method.GetAttributes(), ref ids);
-        if (method.ContainingType is { } containing) CollectFromTypeAndContainers(containing, ref ids);
+        var ids = CollectFrom(method.GetAttributes(), null);
+        if (method.ContainingType is { } containing) ids = CollectFromTypeAndContainers(containing, ids);
 
         return ids is null ? string.Empty : string.Join(Separator, ids);
     }
 
-    private static void CollectFromTypeAndContainers(INamedTypeSymbol type, ref List<string>? ids)
+    // The list is created on the first ID and threaded through the return value, so a member that declares none
+    // allocates nothing.
+    private static List<string>? CollectFromTypeAndContainers(INamedTypeSymbol type, List<string>? ids)
     {
-        if (type.ContainingType is { } containing) CollectFromTypeAndContainers(containing, ref ids);
+        if (type.ContainingType is { } containing) ids = CollectFromTypeAndContainers(containing, ids);
 
-        CollectFrom(type.GetAttributes(), ref ids);
+        return CollectFrom(type.GetAttributes(), ids);
     }
 
-    private static void CollectFrom(ImmutableArray<AttributeData> attributes, ref List<string>? ids)
+    private static List<string>? CollectFrom(ImmutableArray<AttributeData> attributes, List<string>? ids)
     {
         foreach (var attribute in attributes)
             if (ReadDeclaredId(attribute) is { } id && IsUsableInPragma(id) && (ids is null || !ids.Contains(id)))
                 (ids ??= []).Add(id);
+
+        return ids;
     }
 
     private static string? ReadDeclaredId(AttributeData attribute)

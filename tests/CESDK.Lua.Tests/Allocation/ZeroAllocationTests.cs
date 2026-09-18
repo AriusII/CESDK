@@ -43,8 +43,12 @@ public sealed class ZeroAllocationTests
 
             if (!Int32Marshaller.TryRead(L, top + 1, out var i) || i != 42) Fail();
             if (!Int64Marshaller.TryRead(L, top + 2, out var l) || l != long.MinValue) Fail();
-            if (!DoubleMarshaller.TryRead(L, top + 3, out var d) || d != 2.5) Fail();
-            if (!SingleMarshaller.TryRead(L, top + 4, out var f) || f != 1.5f) Fail();
+            // Exact on purpose: the round trip through the Lua stack must not change a single bit,
+            // so the bit patterns are compared.
+            if (!DoubleMarshaller.TryRead(L, top + 3, out var d) ||
+                BitConverter.DoubleToInt64Bits(d) != BitConverter.DoubleToInt64Bits(2.5)) Fail();
+            if (!SingleMarshaller.TryRead(L, top + 4, out var f) ||
+                BitConverter.SingleToInt32Bits(f) != BitConverter.SingleToInt32Bits(1.5f)) Fail();
             if (!BooleanMarshaller.TryRead(L, top + 5, out var b) || !b) Fail();
             if (!AddressMarshaller.TryRead(L, top + 6, out var a) ||
                 a != unchecked((nuint)0xFFFF_FFFF_FFFF_FFF0UL)) Fail();

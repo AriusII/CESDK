@@ -19,6 +19,10 @@ dotnet_sort_system_directives_first = true
 # Unused usings fail the build; this needs GenerateDocumentationFile, set in Directory.Build.props.
 dotnet_diagnostic.IDE0005.severity = warning
 
+[{src,libs,tests}/**.cs]
+# S6640 comes from SonarAnalyzer (SonarQube Cloud), not from the compiler. The SDK reaches Cheat Engine through function pointers, blittable ABI structs and the raw Lua state, so unsafe is the design. The scope leaves analyzers/ and source-generators/ under the rule.
+dotnet_diagnostic.S6640.severity = none
+
 [libs/CESDK.Lua.Interop/**.cs]
 # The project mirrors the Lua 5.3 C API one to one, so C identifiers (lua_gettop, LUA_REGISTRYINDEX) stay.
 dotnet_diagnostic.IDE1006.severity = none

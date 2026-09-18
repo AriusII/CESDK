@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CESDK.Hosting.Bootstrap;
 using CESDK.Hosting.Tests.Support;
 using CESDK.Hosting.Threading;
@@ -257,23 +258,25 @@ public sealed unsafe class MainThreadTests
 
     private static T RunOnWorker<T>(Func<T> work)
     {
-        T? result = default;
-        Exception? crash = null;
+        // Boxes, not captured locals: static analysis (S2583) does not see a lambda's write to a captured local.
+        // Join publishes the worker's writes to this thread.
+        StrongBox<T?> result = new();
+        StrongBox<Exception?> crash = new();
         Thread worker = new(() =>
         {
             try
             {
-                result = work();
+                result.Value = work();
             }
             catch (Exception exception)
             {
-                crash = exception;
+                crash.Value = exception;
             }
         });
         worker.Start();
         worker.Join();
-        if (crash is not null) throw new InvalidOperationException("The worker crashed.", crash);
+        if (crash.Value is { } failure) throw new InvalidOperationException("The worker crashed.", failure);
 
-        return result!;
+        return result.Value!;
     }
 }

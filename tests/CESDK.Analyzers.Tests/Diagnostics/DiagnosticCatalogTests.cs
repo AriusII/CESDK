@@ -61,7 +61,7 @@ public sealed class DiagnosticCatalogTests
         Assert.Equal(HelpLinkBase + descriptor.Id + ".md", descriptor.HelpLinkUri);
         Assert.True(descriptor.IsEnabledByDefault);
         Assert.False(string.IsNullOrWhiteSpace(title));
-        Assert.False(title.EndsWith('.'));
+        Assert.DoesNotMatch(@"\.$", title);
         Assert.EndsWith(".", description, StringComparison.Ordinal);
     }
 

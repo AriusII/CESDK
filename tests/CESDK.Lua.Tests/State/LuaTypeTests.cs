@@ -49,8 +49,10 @@ public sealed class LuaTypeTests
         Assert.True(none.IsNull);
         Assert.Equal(0, none.Handle);
         Assert.Equal(new LuaState(0), none);
-        Assert.True(new LuaState(0x1000) == new LuaState(0x1000));
-        Assert.True(new LuaState(0x1000) != new LuaState(0x2000));
+        LuaState first = new(0x1000);
+        LuaState second = new(0x1000);
+        Assert.True(first == second);
+        Assert.True(first != new LuaState(0x2000));
         Assert.Equal(new LuaState(0x1000).GetHashCode(), new LuaState(0x1000).GetHashCode());
         Assert.Equal("lua_State@0x1000", new LuaState(0x1000).ToString());
     }
