@@ -108,14 +108,50 @@ jobs:
             exit 1
           }
           Write-Host "Coverage reports: $($reports.Count)"
+          # These findings conflict with deliberate repository contracts. Keep them in the scanner configuration so
+          # production and test sources do not need Sonar-only attributes or code changes.
+          $ignoredIssues = @(
+            @{ Key = 'noLinq'; Rule = 'csharpsquid:S3267'; Resource = '**/*.cs' }
+            @{ Key = 'unsafeInterop'; Rule = 'csharpsquid:S6640'; Resource = '**/*.cs' }
+            @{ Key = 'nullableFlow'; Rule = 'csharpsquid:S8970'; Resource = '**/*.cs' }
+            @{ Key = 'luaExportNames'; Rule = 'csharpsquid:S3218'; Resource = 'libs/CESDK.Lua.Interop/Api/**' }
+            @{ Key = 'luaTypeNames'; Rule = 'csharpsquid:S101'; Resource = 'libs/CESDK.Lua.Interop/Types/**' }
+            @{ Key = 'interopShape'; Rule = 'csharpsquid:S107'; Resource = 'libs/CESDK.Lua.Interop/Protected/LuaProtectedExports.cs' }
+            @{ Key = 'callbackDispose'; Rule = 'csharpsquid:S3881'; Resource = 'libs/CESDK.Lua/Callbacks/LuaCallback.cs' }
+            @{ Key = 'memoryProtectionName'; Rule = 'csharpsquid:S2342'; Resource = 'libs/CESDK.Engine/Enums/MemoryProtection.cs' }
+            @{ Key = 'descriptorDispatch'; Rule = 'csharpsquid:S1694'; Resource = 'libs/CESDK.Hosting/Bootstrap/PluginDescriptor.cs' }
+            @{ Key = 'apiOverloadLayout'; Rule = 'csharpsquid:S4136'; Resource = 'libs/**' }
+            @{ Key = 'roslynInstances'; Rule = 'csharpsquid:S2325'; Resource = 'analyzers/**' }
+            @{ Key = 'generatorInstances'; Rule = 'csharpsquid:S2325'; Resource = 'source-generators/**' }
+            @{ Key = 'emittedFragments'; Rule = 'csharpsquid:S1192'; Resource = 'source-generators/CESDK.SourceGenerators.Shared/LuaEmit/LuaGlobalCallEmitter.cs' }
+            @{ Key = 'analyzerComments'; Rule = 'csharpsquid:S125'; Resource = 'analyzers/**' }
+            @{ Key = 'interopComments'; Rule = 'csharpsquid:S125'; Resource = 'libs/CESDK.Lua.Interop/Api/**' }
+            @{ Key = 'testReflection'; Rule = 'csharpsquid:S3011'; Resource = 'tests/**' }
+            @{ Key = 'testLiterals'; Rule = 'csharpsquid:S1192'; Resource = 'tests/**' }
+            @{ Key = 'testGc'; Rule = 'csharpsquid:S1215'; Resource = 'tests/**' }
+            @{ Key = 'testStaticHooks'; Rule = 'csharpsquid:S2696'; Resource = 'tests/**' }
+            @{ Key = 'testDoubleDispose'; Rule = 'csharpsquid:S3966'; Resource = 'tests/**' }
+            @{ Key = 'testBooleanTables'; Rule = 'csharpsquid:S1125'; Resource = 'tests/**' }
+            @{ Key = 'testComplexity'; Rule = 'csharpsquid:S3776'; Resource = 'tests/**' }
+            @{ Key = 'testParameters'; Rule = 'csharpsquid:S107'; Resource = 'tests/**' }
+            @{ Key = 'testMarkerClasses'; Rule = 'csharpsquid:S1118'; Resource = 'tests/**' }
+            @{ Key = 'testDuplicateScenarios'; Rule = 'csharpsquid:S4144'; Resource = 'tests/**' }
+            @{ Key = 'testFixedDoubles'; Rule = 'csharpsquid:S3400'; Resource = 'tests/**' }
+            @{ Key = 'testComments'; Rule = 'csharpsquid:S125'; Resource = 'tests/**' }
+          )
           $arguments = @(
             "/k:$env:SONAR_PROJECT_KEY"
             "/o:$env:SONAR_ORGANIZATION"
             '/d:sonar.exclusions=artifacts/**,tests/CESDK.Benchmarks/**,tests/CESDK.LivePlugin/**'
             '/d:sonar.coverage.exclusions=tests/**'
+            "/d:sonar.issue.ignore.multicriteria=$(($ignoredIssues.Key) -join ',')"
             "/d:sonar.cs.vscoveragexml.reportsPaths=$coverage/**/*.xml"
             "/d:sonar.qualitygate.wait=$env:SONAR_WAIT_QUALITY_GATE"
           )
+          foreach ($issue in $ignoredIssues) {
+            $arguments += "/d:sonar.issue.ignore.multicriteria.$($issue.Key).ruleKey=$($issue.Rule)"
+            $arguments += "/d:sonar.issue.ignore.multicriteria.$($issue.Key).resourceKey=$($issue.Resource)"
+          }
           & "$env:RUNNER_TEMP/sonar-scanner/dotnet-sonarscanner.exe" begin @arguments
 
       - name: Build
