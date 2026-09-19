@@ -53,8 +53,9 @@ Every class carries `[MemoryDiagnoser(false)]` and `[ShortRunJob]`: allocations 
 
 ## Run it
 
-Run in Release, because BenchmarkDotNet refuses a non-optimized build. A Lua 5.3 x64 DLL must be reachable:
-`CESDK_LUA53_PATH` when it is set (no fallback then), else `C:\Program Files\Cheat Engine\lua53-64.dll`. Results land in
+Run in Release, because BenchmarkDotNet refuses a non-optimized build. The Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md) is used, or the DLL named by `CESDK_LUA53_PATH` when it is
+set (no fallback then). Results land in
 `BenchmarkDotNet.Artifacts/` under the working directory, which is git-ignored. To select one class, pass
 `--filter "*MarshallerBenchmarks*"` instead of `--anyCategories`.
 

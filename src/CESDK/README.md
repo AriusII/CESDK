@@ -86,7 +86,8 @@ while your project leaves the property empty. Set `CesdkGenerateEntryPoint` to `
 - Every diagnostic has a help link to its own rule page, listed in
   the [rule index](https://github.com/ShadowNineX/CESDK/blob/main/analyzers/docs/README.md) (`DiagnosticCatalogTests`).
 - An exception from `OnEnable` or `OnDisable` is logged and reported to Cheat Engine as a failed call. It never
-  propagates into Cheat Engine (`EnablePluginTests` and `DisablePluginTests`, which need a Lua 5.3 DLL).
+  propagates into Cheat Engine (`EnablePluginTests` and `DisablePluginTests`, which run against Cheat Engine's own Lua
+  DLL).
 
 ## Requirements
 
@@ -99,6 +100,6 @@ while your project leaves the property empty. Set `CesdkGenerateEntryPoint` to `
 The analyzers and generators are built against Roslyn 5.9.0. An older SDK reports `CS9057` and skips them, so no entry
 point is generated.
 
-CESDK is an independent project, not affiliated with Cheat Engine, which is licensed separately. No Cheat Engine file is
-redistributed. See the [MIT license](https://github.com/ShadowNineX/CESDK/blob/main/LICENSE) and
+CESDK is an independent project, not affiliated with Cheat Engine, which is licensed separately. This package contains
+no Cheat Engine file. See the [MIT license](https://github.com/ShadowNineX/CESDK/blob/main/LICENSE) and
 the [source repository](https://github.com/ShadowNineX/CESDK).

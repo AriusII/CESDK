@@ -25,9 +25,9 @@ DLL under another file name is a different module for the Windows loader. The se
 `LuaApi.Initialize` to refuse it, and skips when the copy cannot load.
 
 Every managed callback is a static cdecl `[UnmanagedCallersOnly]` method that cannot throw, and no test calls
-`lua_error`. The library comes from `CESDK_LUA53_PATH`, else the Cheat Engine install (see [
-`tests/CESDK.Tests.Shared/README.md`](../CESDK.Tests.Shared/README.md)). Without a library the round-trip tests report
-Skipped. The shape tier
+`lua_error`. The library is the Lua of Cheat Engine 7.7 kept in `native/cheat-engine`, unless `CESDK_LUA53_PATH` names
+another DLL (see [`tests/CESDK.Tests.Shared/README.md`](../CESDK.Tests.Shared/README.md)). When the library cannot be
+bound, the round-trip tests report Skipped. The shape tier
 never touches `NativeLuaLibrary`, so it keeps the run from ending with zero executed tests.
 
 ## Run the tests

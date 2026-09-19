@@ -15,15 +15,25 @@
   <Folder Name="/.github/">
     <File Path=".github/dependabot.yml"/>
   </Folder>
+  <Folder Name="/.github/actions/setup-dotnet/">
+    <File Path=".github/actions/setup-dotnet/action.yml"/>
+  </Folder>
   <Folder Name="/.github/workflows/">
-    <File Path=".github/workflows/build.yml"/>
+    <File Path=".github/workflows/_ci.yml"/>
+    <File Path=".github/workflows/_sonar.yml"/>
+    <File Path=".github/workflows/merge.yml"/>
     <File Path=".github/workflows/publish-nuget.yml"/>
+    <File Path=".github/workflows/pull-request.yml"/>
   </Folder>
   <Folder Name="/eng/">
     <File Path="eng/BannedSymbols.txt"/>
     <File Path="eng/RoslynComponent.props"/>
     <File Path="eng/Shipping.props"/>
     <File Path="eng/Tests.props"/>
+  </Folder>
+  <Folder Name="/native/cheat-engine/">
+    <File Path="native/cheat-engine/README.md"/>
+    <File Path="native/cheat-engine/lua53-64.dll"/>
   </Folder>
   <Folder Name="/analyzers/">
     <Project Path="analyzers/CESDK.Analyzers.CodeFixes/CESDK.Analyzers.CodeFixes.csproj"/>

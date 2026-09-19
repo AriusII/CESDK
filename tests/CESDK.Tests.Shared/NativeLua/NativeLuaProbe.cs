@@ -15,17 +15,17 @@ internal sealed record NativeLuaProbe(nint Handle, string? LibraryPath, string R
 {
     /// <summary>
     ///     Locates the DLL (<paramref name="configured" /> when it is not blank, else
-    ///     <see cref="NativeLuaLibrary.DefaultPath" />), loads it and binds <see cref="LuaApi" />. Never throws: every
+    ///     <see cref="NativeLuaLibrary.BundledPath" />), loads it and binds <see cref="LuaApi" />. Never throws: every
     ///     failure becomes <see cref="Reason" />.
     /// </summary>
     /// <param name="configured">Value of the <see cref="NativeLuaLibrary.PathVariable" /> environment variable, or null.</param>
     public static NativeLuaProbe Run(string? configured)
     {
         var fromEnvironment = !string.IsNullOrWhiteSpace(configured);
-        var candidate = fromEnvironment ? configured!.Trim() : NativeLuaLibrary.DefaultPath;
+        var candidate = fromEnvironment ? configured!.Trim() : NativeLuaLibrary.BundledPath;
         var origin = fromEnvironment
             ? "the " + NativeLuaLibrary.PathVariable + " environment variable"
-            : "the default Cheat Engine location";
+            : "the Cheat Engine Lua copied next to the tests";
         var architecture = RuntimeInformation.ProcessArchitecture.ToString();
 
         // One absolute path for the existence check, the load and the report. A relative value would be resolved
@@ -36,7 +36,7 @@ internal sealed record NativeLuaProbe(nint Handle, string? LibraryPath, string R
 
         if (!File.Exists(path))
             return Unavailable(
-                $"No Lua 5.3 library: '{path}' (from {origin}) does not exist. Set {NativeLuaLibrary.PathVariable} to a Lua 5.3 DLL built for {architecture}.");
+                $"No Lua 5.3 library: '{path}' (from {origin}) does not exist. Rebuild the test project, or set {NativeLuaLibrary.PathVariable} to a Lua 5.3 DLL built for {architecture}.");
 
         if (!NativeLibrary.TryLoad(path, out var handle))
             return Unavailable(

@@ -86,15 +86,16 @@ static unsafe class Example
 
 ## Run the tests
 
-Run `dotnet test --project tests/CESDK.Lua.Interop.Tests`. Tests tagged `Category=NativeLua` need a Lua 5.3 DLL, found
-through `CESDK_LUA53_PATH` or a local Cheat Engine install, and report Skipped without one. See [
+Run `dotnet test --project tests/CESDK.Lua.Interop.Tests`. Tests tagged `Category=NativeLua` run against the Lua DLL of
+Cheat Engine 7.7 kept in [`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be installed.
+See [
 `tests/CESDK.Lua.Interop.Tests`](../../tests/CESDK.Lua.Interop.Tests/README.md).
 
 ## Third-party notice
 
 The declarations in this project are transcribed from the header files of Lua 5.3, which are distributed under the MIT
 license. They cover function signatures, constant values, macro expansions and struct layouts. Documentation text is
-original to this project. No Cheat Engine file is redistributed.
+original to this project, which contains no Cheat Engine file.
 
 ```
 Copyright (C) 1994-2015 Lua.org, PUC-Rio.

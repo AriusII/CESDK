@@ -24,11 +24,17 @@ and an `InternalsVisibleTo` list in the project file.
 it. The `openLibraries: false` argument skips `luaL_openlibs` and yields a bare state.
 
 The first use of `NativeLuaLibrary` runs the lookup once. It reads `CESDK_LUA53_PATH` when the value is not blank and
-trims it. No fallback follows, so a provisioned DLL is never replaced silently. Otherwise it uses
-`C:\Program Files\Cheat Engine\lua53-64.dll`. The chosen value becomes one absolute path, and the probe checks, loads
+trims it. No fallback follows, so an override is never replaced silently. Otherwise it uses `BundledPath`, the copy of
+Cheat Engine 7.7's own Lua that the build places at `native/lua53-64.dll` beside the executable (the source file lives
+in
+[`native/cheat-engine`](../../native/cheat-engine/README.md)). An installed Cheat Engine is never consulted, so every
+machine and CI run binds the same build. The chosen value becomes one absolute path, and the probe checks, loads
 and reports that same path. The module stays loaded because `LuaApi` keeps raw addresses into it. The DLL must match the
 architecture of the test process. When no library is usable, `UnavailableReason` names the cause, such as an invalid
 path, a missing file, a load failure or missing Lua 5.3 exports. Tests then report Skipped.
+
+The CI workflow provisions nothing: the checkout carries the DLL, and the file name `lua53-64.dll` lets the production
+module lookup test run too. The Debug test step fails when any test reports Skipped.
 
 ## Use
 
@@ -59,7 +65,9 @@ The projects that use `NativeLua` are `CESDK.Lua.Interop.Tests`, `CESDK.Lua.Test
 ## Promise
 
 - The probe reports an invalid or missing path as a reason, never an exception, and a set variable never falls back to
-  the default. `NativeLuaProbeTests` pins both.
+  the bundled copy. `NativeLuaProbeTests` pins both.
+- Without the variable, the fixture binds Cheat Engine's own Lua, byte for byte: `BundledLuaLibraryTests` pins the file
+  by size and SHA-256 and the path that gets bound.
 - A missing or unusable library skips the test instead of failing it: each test project that uses it guards its
   `NativeLua`
   tests with `Assert.SkipUnless`.

@@ -107,6 +107,6 @@ unsafe code themselves. Analyzer [`CESDK2001`](../../analyzers/docs/CESDK2001.md
 
 ## Run the tests
 
-Run `dotnet test --project tests/CESDK.SourceGenerators.LuaBindings.Tests`. Tests tagged `Category=NativeLua` load a
-real Lua 5.3 library, found through `CESDK_LUA53_PATH` or a local Cheat Engine install, and report Skipped without one.
-See the [test project](../../tests/CESDK.SourceGenerators.LuaBindings.Tests/README.md).
+Run `dotnet test --project tests/CESDK.SourceGenerators.LuaBindings.Tests`. Tests tagged `Category=NativeLua` load the
+Lua DLL of Cheat Engine 7.7 kept in [`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be
+installed. See the [test project](../../tests/CESDK.SourceGenerators.LuaBindings.Tests/README.md).

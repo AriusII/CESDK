@@ -123,7 +123,7 @@ simulated host record.
 dotnet test --project tests/CESDK.Hosting.Tests
 ```
 
-Tests tagged `Category=NativeLua` need a Lua 5.3 DLL, found through the `CESDK_LUA53_PATH` environment variable or a
-local Cheat Engine install. They report Skipped otherwise. See
+Tests tagged `Category=NativeLua` run against the Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be installed. See
 the [test project README](../../tests/CESDK.Hosting.Tests/README.md). To run a plugin inside Cheat Engine,
 follow [Run it in Cheat Engine](../../tests/CESDK.LivePlugin/README.md#run-it-in-cheat-engine).

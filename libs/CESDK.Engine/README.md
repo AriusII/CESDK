@@ -122,6 +122,6 @@ The tests in `tests/CESDK.Engine.Tests` drive a simulated Cheat Engine object mo
 dotnet test --project tests/CESDK.Engine.Tests
 ```
 
-Tests tagged `Category=NativeLua` need a Lua 5.3 DLL, found through the `CESDK_LUA53_PATH` environment variable or a
-local Cheat Engine install. They report Skipped otherwise. See
+Tests tagged `Category=NativeLua` run against the Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be installed. See
 the [test project README](../../tests/CESDK.Engine.Tests/README.md).

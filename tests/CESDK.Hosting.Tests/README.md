@@ -17,8 +17,8 @@ Engine process, so those paths must be provable off-host.
 
 Every callback call crosses the boundary Cheat Engine crosses: the callbacks are read back from the init record as typed
 `delegate* unmanaged[Stdcall]` fields. The bootstrap is the managed `PluginHost.InitializeManaged<TFactory>` that the
-generated entry point calls. Tests tagged `Category=NativeLua` need a real Lua 5.3 DLL, found through `CESDK_LUA53_PATH`
-or a local Cheat Engine install. They report Skipped without one. See [
+generated entry point calls. Tests tagged `Category=NativeLua` run against the Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be installed. See [
 `tests/CESDK.Tests.Shared/README.md`](../CESDK.Tests.Shared/README.md).
 
 | Piece                        | Role                                                                                                                                                                                                  |

@@ -104,7 +104,8 @@ carries the call shape. The public method takes `global::CESDK.Engine.Values.Add
 
 ## Run the tests
 
-The end-to-end tests carry `Category=NativeLua`, need a real Lua 5.3 library and report Skipped without one. See [
+The end-to-end tests carry `Category=NativeLua` and run against the Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md). See [
 `tests/CESDK.SourceGenerators.EngineApi.Tests`](../../tests/CESDK.SourceGenerators.EngineApi.Tests/README.md).
 
 ```powershell

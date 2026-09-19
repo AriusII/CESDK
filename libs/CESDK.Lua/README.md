@@ -120,5 +120,6 @@ dotnet test --project tests/CESDK.Lua.Tests
 dotnet test --project tests/CESDK.Lua.Tests --filter-trait "Category=NativeLua"
 ```
 
-Tests tagged `Category=NativeLua` need a Lua 5.3 DLL, found through `CESDK_LUA53_PATH` or a local Cheat Engine install,
-and report Skipped without one. See [`tests/CESDK.Lua.Tests`](../../tests/CESDK.Lua.Tests/README.md).
+Tests tagged `Category=NativeLua` run against the Lua DLL of Cheat Engine 7.7 kept in
+[`native/cheat-engine`](../../native/cheat-engine/README.md), so nothing has to be installed. See
+[`tests/CESDK.Lua.Tests`](../../tests/CESDK.Lua.Tests/README.md).
