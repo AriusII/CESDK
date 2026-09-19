@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading;
 using CESDK.Lua.Interop.Api;
 using CESDK.Lua.Interop.Loading;
@@ -45,7 +46,32 @@ internal static unsafe class LuaModuleLocator
             return false;
         }
 
-        if (!LuaApi.TryInitialize(handle, out var bindFailure))
+        return BindLocated(handle, !fromSeam, out failure);
+    }
+
+    /// <summary>
+    ///     Binds the API table to <paramref name="handle" /> and settles the loader reference that the lookup added to it.
+    /// </summary>
+    /// <param name="handle">The located module.</param>
+    /// <param name="counted">
+    ///     <see langword="true" /> when the handle carries a reference that the lookup added and this call must settle;
+    ///     <see langword="false" /> when the caller owns the handle (the test seam), which is then never released here.
+    /// </param>
+    /// <param name="failure">Why it failed, for the log; null on success.</param>
+    /// <returns><see langword="true" /> when <see cref="LuaApi.IsInitialized" /> holds for <paramref name="handle" />.</returns>
+    /// <remarks>
+    ///     A bound table needs one reference for the life of the process: the call that binds it keeps its own. Every
+    ///     other outcome (already bound to this module, refused, or not a Lua library) releases it, so that enabling again
+    ///     never accumulates references.
+    /// </remarks>
+    internal static bool BindLocated(nint handle, bool counted, [NotNullWhen(false)] out string? failure)
+    {
+        // The bound module goes from zero to its final value once, so a match read here still holds after the bind.
+        var boundBefore = LuaApi.ModuleHandle == handle;
+        var bound = LuaApi.TryInitialize(handle, out var bindFailure);
+        if (counted && (boundBefore || !bound)) NativeLibrary.Free(handle);
+
+        if (!bound)
         {
             failure = string.Create(CultureInfo.InvariantCulture,
                 $"The Lua API table could not be bound to module 0x{handle:X}: {bindFailure}");

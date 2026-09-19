@@ -198,11 +198,13 @@ public abstract class LuaCallback : IDisposable
         }
     }
 
-    internal unsafe void ReleaseUnderGate(LuaState state)
+    // Private so that Release, which holds the gate, is the only way in: the flag test, GCHandle<T>.Dispose (not thread
+    // safe) and the unlink all depend on it.
+    private unsafe void ReleaseUnderGate(LuaState state)
     {
         if (_released)
         {
-            LuaCallbackRegistry.RemoveUnderGate(this);
+            LuaCallbackRegistry.Remove(this);
             return;
         }
 
@@ -221,6 +223,6 @@ public abstract class LuaCallback : IDisposable
         _wrapped.Release(state);
         if (neutralized && _handle.IsAllocated) _handle.Dispose();
 
-        LuaCallbackRegistry.RemoveUnderGate(this);
+        LuaCallbackRegistry.Remove(this);
     }
 }

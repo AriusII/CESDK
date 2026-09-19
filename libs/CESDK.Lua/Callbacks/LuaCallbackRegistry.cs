@@ -43,24 +43,27 @@ internal static class LuaCallbackRegistry
         }
     }
 
-    /// <summary>Unlinks under the gate held by the caller.</summary>
-    internal static void RemoveUnderGate(LuaCallback callback)
+    /// <summary>
+    ///     Unlinks <paramref name="callback" />, or does nothing when it is not linked. Takes the gate itself, and
+    ///     <see cref="Lock" /> is reentrant, so a caller that already holds it pays next to nothing.
+    /// </summary>
+    internal static void Remove(LuaCallback callback)
     {
-        if (!callback.IsLinked) return;
+        lock (Gate)
+        {
+            if (!callback.IsLinked) return;
 
-        if (callback.Previous is null)
-            lock (Gate)
-            {
+            if (callback.Previous is null)
                 s_head = callback.Next;
-            }
-        else
-            callback.Previous.Next = callback.Next;
+            else
+                callback.Previous.Next = callback.Next;
 
-        callback.Next?.Previous = callback.Previous;
+            callback.Next?.Previous = callback.Previous;
 
-        callback.Next = null;
-        callback.Previous = null;
-        callback.IsLinked = false;
+            callback.Next = null;
+            callback.Previous = null;
+            callback.IsLinked = false;
+        }
     }
 
     /// <summary>
@@ -76,10 +79,10 @@ internal static class LuaCallbackRegistry
 
             var l = services.Provider();
             LuaState state = new(l);
-            // ReleaseUnderGate unlinks the head it is called on, so s_head is re-read on every iteration and the loop
+            // Release unlinks the head it is called on, so s_head is re-read on every iteration and the loop
             // ends when the list is empty. Keep the explicit re-read: a "condition is always true" IDE quick-fix once
             // turned this loop into while (true), which ended every Detach with a NullReferenceException.
-            for (var head = s_head; head is not null; head = s_head) head.ReleaseUnderGate(state);
+            for (var head = s_head; head is not null; head = s_head) head.Release(state);
         }
     }
 }

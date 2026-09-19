@@ -45,5 +45,7 @@ dotnet test --project tests/CESDK.Lua.Tests --filter-trait "Category=NativeLua"
   `LuaCallbackTests`).
 - A stale reference is detected by its epoch (`LuaRefEpochTests`, `LuaRefTests`).
 - `LuaRuntime.Detach` neutralizes every callback the plugin forgot (`LuaCallbackTests`).
+- Unlinking a callback takes the registry gate itself, from any position and from any thread
+  (`LuaCallbackRegistryTests`).
 - Hot paths allocate zero bytes once warm: scalars, protected calls, callbacks and the call shape
   (`ZeroAllocationTests`, `ReadIntegerBindingTests`, `StringBindingTests`).
