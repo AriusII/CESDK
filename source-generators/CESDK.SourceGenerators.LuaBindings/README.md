@@ -30,10 +30,15 @@ internal static partial class Bindings
     public static long Add(long a, long b) => a + b;
 
     [LuaGlobal("readInteger")]
-    internal static partial bool TryReadInt32(nuint address, out int value);
+    private static partial bool TryReadInt32Raw(nuint address, bool signed, out int value);
+
+    // Cheat Engine's readInteger defaults to unsigned; keep the signed flag out of this public helper.
+    internal static bool TryReadInt32(nuint address, out int value) => TryReadInt32Raw(address, true, out value);
 
     [LuaGlobal("readInteger")]
-    internal static partial int ReadInt32(nuint address);
+    private static partial int ReadInt32Raw(nuint address, bool signed);
+
+    internal static int ReadInt32(nuint address) => ReadInt32Raw(address, true);
 }
 ```
 
@@ -57,6 +62,10 @@ A `[LuaGlobal]` method has one of two forms. A Try form returns `bool` and ends 
 `Span<byte> destination, out int written`. It returns `false` and defaults the results when the global is missing,
 raises or returns the wrong kind. A throwing form returns `void` or one value and throws `LuaException` in those cases.
 A `bool` return without `out` results is a throwing form that reads a Lua boolean.
+
+Cheat Engine-specific optional arguments remain ordinary binding parameters. For example, request a signed
+`readInteger` result through a private generated raw binding and pass `true` from a public helper, as above. That keeps
+the public `int` API from receiving an unsigned value that cannot represent negative 32-bit results.
 
 - The containing type, and every type around it, is `partial`, non-generic, a class, struct or record, and not `file`
   -local.

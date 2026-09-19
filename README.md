@@ -72,7 +72,8 @@ build step. CESDK is for plugins that deserve a real project.
    }
    ```
 
-3. Build, then keep the whole output folder together. The CESDK libraries sit next to `MyPlugin.dll`.
+3. Build, then keep the whole output folder together. The CESDK libraries and `cesdk-lua-bridge.dll` sit next to
+   `MyPlugin.dll`.
 
    ```powershell
    dotnet build -c Release
@@ -82,15 +83,25 @@ build step. CESDK is for plugins that deserve a real project.
    `print(greet("world"))`.
 
 > [!IMPORTANT]
-> Cheat Engine 7.7 asks for the .NET 9 runtime, so a .NET 10 plugin needs one roll-forward setting. Start Cheat Engine
-from a shell that sets it:
+> Cheat Engine 7.7 asks for .NET 9. Before starting it, edit the Cheat Engine folder's `ce.runtimeconfig.json` in an
+> elevated editor to request .NET 10 explicitly:
+>
+> - Set `runtimeOptions.tfm` to `net10.0`.
+> - Set the `version` of every framework request to `10.0.0`: `Microsoft.NETCore.App`,
+>   `Microsoft.WindowsDesktop.App`, and `Microsoft.AspNetCore.App` (whether the file uses `framework` or `frameworks`).
+> - Set `runtimeOptions.rollForward` to `LatestMinor`. If a framework entry has its own `rollForward`, set it to
+>   `LatestMinor` too.
+>
+> With that configuration, Cheat Engine stays on .NET 10 even when .NET 9 or 11 is installed. A shell launch can repeat
+> the same policy, but does not select .NET 10 by itself:
 >
 > ```powershell
-> $env:DOTNET_ROLL_FORWARD = "Major"
-> & "C:\Program Files\Cheat Engine\cheatengine-x86_64.exe"
+> $env:DOTNET_ROLL_FORWARD = "LatestMinor"
+> .\cheatengine-x86_64.exe
 > ```
 >
-> You can also edit `ce.runtimeconfig.json` in the Cheat Engine folder to request `10.0.0`.
+> Keep the existing framework names. This changes Cheat Engine's runtime request only; it does not change installed
+> runtimes or machine-wide environment settings.
 
 The [live plugin guide](tests/CESDK.LivePlugin/README.md#run-it-in-cheat-engine) walks through the same steps with a
 larger sample and the log output to expect.
@@ -116,6 +127,10 @@ larger sample and the log output to expect.
 
 The analyzers and generators are built against Roslyn 5.9. An older SDK reports `CS9057` and skips them, so the entry
 point is never generated.
+
+Plugin authors and ordinary source builds do not need xmake or a C compiler. The package and repository carry the
+prebuilt Windows x64 Lua protection bridge. CI rebuilds that bridge with xmake before it builds, tests, and packs CESDK;
+only contributors changing `native/cesdk-lua-bridge` need the native toolchain locally.
 
 ## Projects
 
@@ -146,6 +161,9 @@ Cheat Engine 7.7 kept in [`native/cheat-engine`](native/cheat-engine/README.md),
 [`tests/CESDK.Tests.Shared`](tests/CESDK.Tests.Shared/README.md) explains how the DLL is found.
 Every project has a README
 that states its design and guarantees.
+
+To rebuild the bridge after changing its C source, install xmake and a Windows x64 C toolchain, then follow
+[`native/cesdk-lua-bridge/README.md`](native/cesdk-lua-bridge/README.md). Normal managed changes do not require this.
 
 ## License
 

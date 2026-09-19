@@ -15,12 +15,17 @@ Cheat Engine keeps its Lua state inside its own `lua53-64.dll`. A plugin must ca
 its own global state and none of Cheat Engine's functions. A wrong native declaration corrupts memory instead of
 throwing, so this layer transcribes the Lua headers and adds nothing.
 
+Allocating calls use the tiny `cesdk-lua-bridge.dll` shipped with CESDK. It receives pointers to the host's existing Lua
+exports and places the operation below `lua_pcallk`, so Lua cannot `longjmp` through managed frames. The prebuilt Windows
+x64 DLL is copied beside consumers automatically; xmake and a C compiler are needed only to change the bridge itself.
+
 ## How it works
 
 | Namespace                   | Types                                | Role                                                            |
 |-----------------------------|--------------------------------------|-----------------------------------------------------------------|
 | `CESDK.Lua.Interop.Api`     | `LuaApi`                             | Binding, one forwarder per export, constants, macro equivalents |
 | `CESDK.Lua.Interop.Loading` | `LuaModule`                          | Finds a Lua library that is already loaded                      |
+| `CESDK.Lua.Interop.Protected` | internal bridge binding            | Calls allocating primitives below a native protected boundary  |
 | `CESDK.Lua.Interop.Types`   | `lua_State`, `lua_Debug`, `luaL_Reg` | Opaque state, debug record, registration entry                  |
 
 `LuaApi` holds one table of `delegate* unmanaged[Cdecl]` pointers, resolved with `NativeLibrary.TryGetExport` from a

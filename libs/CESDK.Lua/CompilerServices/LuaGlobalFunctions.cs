@@ -5,22 +5,21 @@ using System.Threading;
 using CESDK.Lua.References;
 using CESDK.Lua.Runtime;
 using CESDK.Lua.State;
-using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.CompilerServices;
 
 /// <summary>
 ///     Generator-facing: pushes a global function through a lazily resolved, epoch-checked <see cref="LuaRef" />, so that
-///     a bound global costs one <c>lua_rawgeti</c> per call after the first. Not meant to be called by hand.
+///     a bound global is read from the SDK's private reference table after the first call. Not meant to be called by hand.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>Hot path</b> (<see cref="TryPush" />): one volatile read of the reference, one epoch comparison, one
-///         <c>lua_rawgeti</c>, whose returned type tag is checked for free. <b>Cold path</b> (first use, or the epoch has
+///         <b>Hot path</b> (<see cref="TryPush" />): a reference lookup synchronized with release and an epoch comparison.
+///         <b>Cold path</b> (first use, or the epoch has
 ///         advanced since the reference was resolved): a protected read of the global (
 ///         <see cref="LuaState.TryGetGlobal" />),
-///         a type check (the value must be a function) and a <c>luaL_ref</c>, under a lock so that two threads resolving
-///         the
+    ///         a type check (the value must be a function) and a private-table reference, under a lock so that two threads
+    ///         resolving the
 ///         same global do not both take a slot. A stale slot from a previous epoch is never released: its registry may be
 ///         gone or reused, so it is simply forgotten (one slot per epoch per global, in the rare case that the host
 ///         re-attaches
@@ -54,10 +53,11 @@ public static unsafe class LuaGlobalFunctions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryPush(LuaState state, LuaRef cache, ReadOnlySpan<byte> name)
     {
-        if (!cache.TryGetCurrent(out var slot)) return Resolve(state, cache, name);
-        if (lua_rawgeti(state.Pointer, LUA_REGISTRYINDEX, slot) == LUA_TFUNCTION) return true;
-
-        lua_settop(state.Pointer, -2);
+        if (state.TryPushRef(cache))
+        {
+            if (state.IsFunction(-1)) return true;
+            state.Pop(1);
+        }
 
         return Resolve(state, cache, name);
     }
@@ -66,26 +66,42 @@ public static unsafe class LuaGlobalFunctions
     private static bool Resolve(LuaState state, LuaRef cache, ReadOnlySpan<byte> name)
     {
         var top = state.Top;
+        var epoch = LuaRuntime.Epoch;
+        // A globals __index handler can execute arbitrary Lua, including a cross-thread synchronize call.
+        // Do not hold the resolution gate while it runs.
+        var status = state.TryGetGlobal(name);
+        if (!status.IsOk || !state.IsFunction(-1))
+        {
+            state.SetTop(top);
+            return false;
+        }
+
         lock (SResolveGate)
         {
-            // Another thread may have resolved it while this one waited for the gate.
-            if (cache.TryGetCurrent(out var slot))
-            {
-                if (lua_rawgeti(state.Pointer, LUA_REGISTRYINDEX, slot) == LUA_TFUNCTION) return true;
-
-                state.SetTop(top);
-            }
-
-            var epoch = LuaRuntime.Epoch;
-            var status = state.TryGetGlobal(name);
-            if (!status.IsOk || !state.IsFunction(-1))
+            if (epoch != LuaRuntime.Epoch)
             {
                 state.SetTop(top);
                 return false;
             }
 
+            // Another thread may have resolved it while this one waited for the gate.
+            if (state.TryPushRef(cache))
+            {
+                if (state.IsFunction(-1))
+                {
+                    state.Remove(-2);
+                    return true;
+                }
+                state.Pop(1);
+            }
+
             state.PushValue(-1);
-            var reference = luaL_ref(state.Pointer, LUA_REGISTRYINDEX);
+            status = LuaReferences.Create(state, out var reference);
+            if (!status.IsOk)
+            {
+                state.SetTop(top);
+                return false;
+            }
             cache.Rebind(reference, epoch);
             return true;
         }

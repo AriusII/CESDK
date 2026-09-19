@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 // Switching the runtime marshaller off turns "no hidden marshalling, no hidden allocation" into a compile-time
 // guarantee: a non-blittable type in a function-pointer signature or in the one P/Invoke no longer compiles.
 [assembly: DisableRuntimeMarshalling]
+[assembly: InternalsVisibleTo("CESDK.Lua")]
 
 // SonarAnalyzer rule S6640 flags every unsafe context. Unsafe is how this assembly reaches Cheat Engine, through
 // function pointers and blittable structures, so the rule has nothing to say here.

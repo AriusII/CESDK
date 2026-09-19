@@ -49,6 +49,9 @@ public sealed class EmissionTests(RoslynFixture roslyn) : IClassFixture<RoslynFi
             StringComparison.Ordinal);
         Assert.DoesNotContain("partial bool", text,
             StringComparison.Ordinal); // complete declarations, never a partial-method body
+        Assert.Contains("global::CESDK.Lua.Marshalling.BooleanMarshaller.Push(__L, true);", text,
+            StringComparison.Ordinal);
+        Assert.Contains("if (!__L.TryCall(2, 1).IsOk)", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -64,20 +67,31 @@ public sealed class EmissionTests(RoslynFixture roslyn) : IClassFixture<RoslynFi
                            {
                                global::CESDK.Lua.State.LuaState __L = global::CESDK.Lua.Runtime.LuaRuntime.AcquireState();
                                int __top = __L.Top;
-                               if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_readInteger, "readInteger"u8))
+                               try
                                {
-                                   return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
-                               }
+                                   if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_readInteger, "readInteger"u8))
+                                   {
+                                       return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                                   }
 
-                               global::CESDK.Lua.Marshalling.AddressMarshaller.Push(__L, address);
-                               if (!__L.TryCall(1, 1).IsOk)
+                                   global::CESDK.Lua.Marshalling.AddressMarshaller.Push(__L, address);
+                                   if (!__L.TryCall(1, 1).IsOk)
+                                   {
+                                       return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                                   }
+
+                                   bool __ok = global::CESDK.Lua.Marshalling.Int32Marshaller.TryRead(__L, -1, out value);
+                                   return __ok;
+                               }
+                               catch (global::CESDK.Lua.Calls.LuaException)
                                {
-                                   return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                                   value = default;
+                                   return false;
                                }
-
-                               bool __ok = global::CESDK.Lua.Marshalling.Int32Marshaller.TryRead(__L, -1, out value);
-                               __L.SetTop(__top);
-                               return __ok;
+                               finally
+                               {
+                                   __L.SetTop(__top);
+                               }
                            }
                            """;
         Assert.Contains(Indented(expectedCore), run.SingleGeneratedText, StringComparison.Ordinal);

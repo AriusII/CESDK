@@ -43,7 +43,9 @@ anything is pushed, and a setter pops its operands even when it fails. The helpe
 A managed callback is a static `[UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]` method that takes the state
 as `nint` and catches every exception. It reports failure with `LuaThunk.Fail`, which pushes a sentinel and a message. A
 Lua wrapper turns that into `error(message, 2)`, where unwinding is safe. `LuaCallback.TryCreate` attaches a state
-object that the thunk reads with `LuaThunk.TryGetState`.
+object that the thunk reads with `LuaThunk.TryGetState`. Lookup acquires a strong managed reference under the same gate
+as release. SDK references use a private registry table and never participate in the host registry free list. Any Lua
+operation that may allocate is called through `cesdk-lua-bridge.dll`, so a Lua `longjmp` cannot cross a managed frame.
 
 `LuaRuntime.Attach` advances an epoch. A `LuaRef` from an earlier epoch is stale: it is never pushed, and its slot is
 forgotten. `LuaRuntime.Detach` neutralizes every live callback while the state is still reachable. Nothing has a
@@ -57,8 +59,9 @@ a negative Lua integer.
 ### The generated call shape
 
 The `LuaBindings` generator emits this shape for
-`[LuaGlobal("readInteger")] public static partial bool TryReadInt32(nuint address, out int value);`. Generated code uses
-other local names and `global::` qualification. Hand-written code can guard the stack with
+`[LuaGlobal("readInteger")] public static partial bool TryReadInt32(nuint address, bool signed, out int value);`, with
+the public helper passing `signed: true`. Generated code uses other local names and `global::` qualification.
+Hand-written code can guard the stack with
 `using LuaFrame frame = new(L);` instead of the `top` and `SetTop` pair.
 
 ```csharp
@@ -78,7 +81,8 @@ static class MemoryReads
         if (!LuaGlobalFunctions.TryPush(L, s_readInteger, "readInteger"u8))
             return LuaCallSupport.Fail(L, top, out value);
         AddressMarshaller.Push(L, address);
-        if (!L.TryCall(1, 1).IsOk) return LuaCallSupport.Fail(L, top, out value);
+        BooleanMarshaller.Push(L, true); // CE readInteger defaults to unsigned.
+        if (!L.TryCall(2, 1).IsOk) return LuaCallSupport.Fail(L, top, out value);
         var ok = Int32Marshaller.TryRead(L, -1, out value);
         L.SetTop(top);
         return ok;
@@ -86,7 +90,8 @@ static class MemoryReads
 }
 ```
 
-A body has three exits besides success: the global is unresolved, the call raised, or the result is `nil` or of the
+Generated bodies restore the stack in `finally`, including a managed exception from a marshaller. A body also handles:
+the global is unresolved, the call raised, or the result is `nil` or of the
 wrong type. A `Try*` form returns `false` through `LuaCallSupport.Fail`. A throwing form calls `ThrowUnresolvedGlobal`,
 `Throw` or `ThrowUnexpectedResult`, which restore the stack and throw `LuaException`.
 

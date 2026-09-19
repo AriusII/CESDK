@@ -42,7 +42,8 @@ internal static class LuaGlobalParser
                 signature.Form,
                 signature.Results,
                 signature.ReturnKind,
-                signature.ReturnIsNullable);
+                signature.ReturnIsNullable,
+                method.IsExtensionMethod);
 
         return new LuaGlobalModel(containingType, typeIssues, issues, call, SortKey(method));
     }

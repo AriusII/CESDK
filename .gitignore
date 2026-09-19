@@ -11,5 +11,6 @@ BenchmarkDotNet.Artifacts/
 
 .idea/
 .vs/
+.xmake/
 *.user
 *.suo

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using CESDK.Lua.Calls;
+using CESDK.Lua.Interop.Protected;
 using CESDK.Lua.Protected;
 using CESDK.Lua.References;
 using CESDK.Lua.Runtime;
@@ -73,7 +74,16 @@ public abstract class LuaCallback : IDisposable
     public bool IsCurrent => !IsReleased && _wrapped.IsCurrent;
 
     /// <summary>Gets the managed state object, untyped; <see langword="null" /> after release.</summary>
-    public object? StateObject => IsReleased || !_handle.IsAllocated ? null : _handle.Target;
+    public object? StateObject
+    {
+        get
+        {
+            lock (LuaCallbackRegistry.Gate)
+            {
+                return IsReleased || !_handle.IsAllocated ? null : _handle.Target;
+            }
+        }
+    }
 
     internal LuaCallback? Next { get; set; }
 
@@ -119,38 +129,48 @@ public abstract class LuaCallback : IDisposable
         ArgumentNullException.ThrowIfNull(stateObject);
         callback = null;
         var l = state.Pointer;
+        var top = state.Top;
 
         GCHandle<object> handle = new(stateObject);
-        lua_pushlightuserdata(l, (void*)GCHandle<object>.ToIntPtr(handle));
-        lua_pushcclosure(l, thunk.Pointer, 1);
-        lua_pushvalue(l, -1);
-        var closure = state.CreateRef();
-
-        // [closure] -> [closure wrap] -> [wrap closure] -> [wrapped]
-        var status = LuaHelpers.Push(l, LuaHelper.Wrap);
-        if (!status.IsOk)
+        LuaRef? closure = null;
+        LuaRef? wrapped = null;
+        var transferred = false;
+        try
         {
+            lua_pushlightuserdata(l, (void*)GCHandle<object>.ToIntPtr(handle));
+            var status = new LuaStatus(LuaProtectedApi.PushClosure(l, (nint)thunk.Pointer, 1));
+            if (!status.IsOk) return status;
+
+            lua_pushvalue(l, -1);
+            status = state.TryCreateRef(out closure);
+            if (!status.IsOk) return state.KeepProtectedError(top, status);
+
+            // [closure] -> [closure wrap] -> [wrap closure] -> [wrapped]
+            status = LuaHelpers.Push(l, LuaHelper.Wrap);
+            if (!status.IsOk) return state.KeepProtectedError(top, status);
+
             lua_rotate(l, -2, 1);
-            lua_settop(l, -2);
-            closure.Release(state);
-            handle.Dispose();
-            return status;
-        }
+            status = state.TryCall(1, 1);
+            if (!status.IsOk) return status;
 
-        lua_rotate(l, -2, 1);
-        status = state.TryCall(1, 1);
-        if (!status.IsOk)
+            status = state.TryCreateRef(out wrapped);
+            if (!status.IsOk) return status;
+
+            LuaCallback<TState> created = new(handle, closure!, wrapped!);
+            LuaCallbackRegistry.Add(created);
+            callback = created;
+            transferred = true;
+            return LuaStatus.Ok;
+        }
+        finally
         {
-            closure.Release(state);
-            handle.Dispose();
-            return status;
+            if (!transferred)
+            {
+                closure?.Release(state);
+                wrapped?.Release(state);
+                if (handle.IsAllocated) handle.Dispose();
+            }
         }
-
-        var wrapped = state.CreateRef();
-        LuaCallback<TState> created = new(handle, closure, wrapped);
-        LuaCallbackRegistry.Add(created);
-        callback = created;
-        return LuaStatus.Ok;
     }
 
     /// <summary>
@@ -178,8 +198,8 @@ public abstract class LuaCallback : IDisposable
     public LuaStatus TryRegister(LuaState state, ReadOnlySpan<byte> globalName)
     {
         if (TryPush(state)) return state.TrySetGlobal(globalName);
-        state.PushString("the callback has been released, or was created in an earlier host epoch"u8);
-        return LuaStatus.RuntimeError;
+        var status = state.TryPushString("the callback has been released, or was created in an earlier host epoch"u8);
+        return status.IsOk ? LuaStatus.RuntimeError : status;
     }
 
     /// <summary>
@@ -219,10 +239,21 @@ public abstract class LuaCallback : IDisposable
             neutralized = true;
         }
 
-        _closure.Release(state);
-        _wrapped.Release(state);
-        if (neutralized && _handle.IsAllocated) _handle.Dispose();
-
-        LuaCallbackRegistry.Remove(this);
+        try
+        {
+            _closure.Release(state);
+        }
+        finally
+        {
+            try
+            {
+                _wrapped.Release(state);
+            }
+            finally
+            {
+                if (neutralized && _handle.IsAllocated) _handle.Dispose();
+                LuaCallbackRegistry.Remove(this);
+            }
+        }
     }
 }

@@ -9,12 +9,11 @@ namespace CESDK.SourceGenerators.Shared.LuaEmit;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The body is straight-line: one state acquisition (or the caller's state), <c>Top</c> recorded, the cached
-///         global
-///         pushed through <c>LuaGlobalFunctions.TryPush</c>, one marshaller push per argument, one <c>TryCall</c>, one
-///         marshaller read per result while the results are still on the stack, <c>SetTop</c>, return. No allocation, no
-///         <c>try</c>/<c>catch</c>/<c>finally</c> (an EH region would block inlining and cost on the success path), no
-///         <c>string</c> at run time: the name is a <c>u8</c> literal.
+///         The body records the state top before pushing the cached global through <c>LuaGlobalFunctions.TryPush</c>,
+///         pushes one marshalled value per argument, calls once, reads the results, then returns. A <c>finally</c>
+///         restores the recorded top even when a Lua operation throws a managed <c>LuaException</c>; Try wrappers
+///         translate that exception to <see langword="false" /> with defaulted results. There is no <c>string</c> at run
+///         time: the name is a <c>u8</c> literal.
 ///     </para>
 ///     <para>
 ///         Three exits besides success, each a call into <c>LuaCallSupport</c> that restores the stack first: the global
@@ -73,16 +72,21 @@ internal static class LuaGlobalCallEmitter
         var first = true;
         if (model.TakesState)
         {
+            if (model.IsExtensionMethod) writer.Write("this ");
+
             writer.Write(LuaApiNames.LuaState);
             writer.Write(' ');
             writer.Write(model.StateParameterName);
             first = false;
         }
 
-        foreach (var argument in model.Arguments)
+        for (var i = 0; i < model.Arguments.Length; i++)
         {
+            var argument = model.Arguments[i];
+            if (argument.IsFixed) continue;
+
             WriteSeparator(writer, ref first);
-            WriteArgumentParameter(writer, argument);
+            WriteArgumentParameter(writer, argument, model.IsExtensionMethod && !model.TakesState && i == 0);
         }
 
         if (model.Form == LuaCallForm.Try)
@@ -97,8 +101,10 @@ internal static class LuaGlobalCallEmitter
 
     // 'scoped <type> name': the scoped modifier is written first when the declaration used it (Utf8 is the only
     // argument kind of ref struct type; every other kind's IsScoped is always false, see LuaArgumentModel).
-    private static void WriteArgumentParameter(SourceWriter writer, LuaArgumentModel argument)
+    private static void WriteArgumentParameter(SourceWriter writer, LuaArgumentModel argument, bool isExtensionReceiver)
     {
+        if (isExtensionReceiver) writer.Write("this ");
+
         if (argument.IsScoped) writer.Write("scoped ");
 
         writer.Write(LuaValueKinds.TypeName(argument.Kind, argument.IsNullable));
@@ -164,6 +170,8 @@ internal static class LuaGlobalCallEmitter
         var resultCount = model.ResultCount;
 
         WriteStateAndTop(writer, model);
+        writer.WriteLine("try");
+        writer.OpenBlock();
 
         // Only bodies that would exceed the guaranteed free slots check the stack.
         var slots = Math.Max(1 + argumentCount, resultCount);
@@ -178,7 +186,7 @@ internal static class LuaGlobalCallEmitter
             writer.Write(".Push(");
             writer.Write(State);
             writer.Write(", ");
-            writer.Write(argument.Name);
+            writer.Write(argument.FixedValue ?? argument.Name);
             writer.WriteLine(");");
         }
 
@@ -191,6 +199,26 @@ internal static class LuaGlobalCallEmitter
             WriteThrowingCall(writer, argumentCount, resultCount);
             WriteThrowingResult(writer, model);
         }
+
+        writer.CloseBlock();
+
+        if (model.Form == LuaCallForm.Try)
+        {
+            writer.Write("catch (");
+            writer.Write(LuaApiNames.LuaException);
+            writer.WriteLine(")");
+            writer.OpenBlock();
+            WriteTryExceptionFailure(writer, model);
+            writer.CloseBlock();
+        }
+
+        writer.WriteLine("finally");
+        writer.OpenBlock();
+        writer.Write(State);
+        writer.Write(".SetTop(");
+        writer.Write(Top);
+        writer.WriteLine(");");
+        writer.CloseBlock();
     }
 
     private static void WriteStateAndTop(SourceWriter writer, LuaGlobalCallModel model)
@@ -294,10 +322,6 @@ internal static class LuaGlobalCallEmitter
             }
         }
 
-        writer.Write(State);
-        writer.Write(".SetTop(");
-        writer.Write(Top);
-        writer.WriteLine(");");
         writer.Write("return ");
         writer.Write(resultCount == 1 ? Ok : "true");
         writer.WriteLine(";");
@@ -363,10 +387,6 @@ internal static class LuaGlobalCallEmitter
         writer.WriteLine(");");
         writer.CloseBlock();
         writer.WriteLine();
-        writer.Write(State);
-        writer.Write(".SetTop(");
-        writer.Write(Top);
-        writer.WriteLine(");");
         writer.Write("return ");
         writer.Write(Result);
         writer.WriteLine(";");
@@ -420,6 +440,19 @@ internal static class LuaGlobalCallEmitter
         writer.Write(", out ");
         writer.Write(model.Results[failing].Name);
         writer.WriteLine(");");
+    }
+
+    // Push and conversion operations can throw managed LuaException after native failures. A Try wrapper keeps its
+    // ordinary failure contract for that path; the surrounding finally restores its stack snapshot.
+    private static void WriteTryExceptionFailure(SourceWriter writer, LuaGlobalCallModel model)
+    {
+        foreach (var result in model.Results)
+        {
+            writer.Write(result.Name);
+            writer.WriteLine(LuaValueKinds.IsReferenceType(result.Kind) ? " = default!;" : " = default;");
+        }
+
+        writer.WriteLine("return false;");
     }
 
     // The exit taken when the stack cannot grow: nothing was pushed yet, so the top needs no restoring.

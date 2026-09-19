@@ -71,4 +71,11 @@ public sealed class PackageContentsTests(PackagedUmbrellaFixture fixture)
     {
         Assert.Contains("README.md", fixture.PackageEntries, StringComparer.Ordinal);
     }
+
+    [Fact]
+    public void Package_carries_the_win_x64_native_bridge()
+    {
+        Assert.Contains("runtimes/win-x64/native/cesdk-lua-bridge.dll", fixture.PackageEntries,
+            StringComparer.Ordinal);
+    }
 }

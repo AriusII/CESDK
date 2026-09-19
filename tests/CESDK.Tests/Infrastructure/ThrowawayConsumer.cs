@@ -45,6 +45,9 @@ internal sealed class ThrowawayConsumer
     /// </summary>
     public string AssemblyPath { get; }
 
+    /// <summary>The native protection bridge copied beside the built plugin.</summary>
+    public string NativeBridgePath => Path.Combine(Path.GetDirectoryName(AssemblyPath)!, "cesdk-lua-bridge.dll");
+
     /// <summary>
     ///     Scaffolds a project named <paramref name="name" /> under <paramref name="parentDirectory" />: an
     ///     x64/net10.0 class library with one <c>PackageReference</c> to <c>CESDK</c> restored only from
@@ -74,7 +77,6 @@ internal sealed class ThrowawayConsumer
                                         """);
 
         File.WriteAllText(Path.Combine(directory, "Plugin.cs"), PluginSource);
-
         // <clear/>: this consumer's restore must depend only on the two sources named here, never on whatever
         // machine- or user-level NuGet.Config the CI/dev box happens to carry (same reasoning as the repo's own
         // root nuget.config).
@@ -115,6 +117,14 @@ internal sealed class ThrowawayConsumer
     public Task<ProcessResult> BuildAsync(TimeSpan timeout)
     {
         return ProcessRunner.RunAsync("dotnet", $"build \"{ProjectPath}\" -c Release --no-restore --nologo", Directory,
+            timeout);
+    }
+
+    /// <summary>Publishes the consumer into <paramref name="outputDirectory" /> without restoring again.</summary>
+    public Task<ProcessResult> PublishAsync(TimeSpan timeout, string outputDirectory)
+    {
+        return ProcessRunner.RunAsync("dotnet",
+            $"publish \"{ProjectPath}\" -c Release --no-restore --nologo -o \"{outputDirectory}\"", Directory,
             timeout);
     }
 

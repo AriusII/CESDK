@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../libs/CESDK.Lua/CESDK.Lua.csproj"/>
+    <ProjectReference Include="../CESDK.Lua.FailureProbe/CESDK.Lua.FailureProbe.csproj"/>
   </ItemGroup>
 
   <ItemGroup>

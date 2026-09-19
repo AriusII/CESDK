@@ -260,7 +260,8 @@ flowchart TD
     B -->|A call into Cheat Engine| D{Which form?}
     D -->|Try| E[false, results at their defaults]
     D -->|Throwing| F[LuaException]
-    B -->|OnEnable or OnDisable| G[The host logs it and tells Cheat Engine FALSE]
+    B -->|OnEnable| G[The host logs it and tells Cheat Engine FALSE]
+    B -->|OnDisable| K[The host logs it, completes cleanup, and tells Cheat Engine TRUE]
     B -->|A thread you started| H[You catch it, or the process ends]
     C --> I[A script guards the call with pcall]
     F --> J[You catch it and write it to HostLog]
@@ -274,7 +275,7 @@ flowchart TD
 | `CEObject` typed members                 | `false`                                                                          | Check the result, like any Try form                                                         |
 | A `[LuaFunction]` body that throws       | A Lua error such as `System.DivideByZeroException: Attempted to divide by zero.` | Validate arguments for a friendlier message, and log inside the method if you want a record |
 | `OnEnable` throws                        | The host logs the exception, and Cheat Engine is told the enable failed          | Throw on purpose when setup cannot finish                                                   |
-| `OnDisable` throws                       | Logged, and reported as a failed disable, but the plugin is disabled anyway      | Avoid it. Release what you own first                                                        |
+| `OnDisable` throws                       | Logged; cleanup completes and Cheat Engine records the disabled state             | Avoid it. Release what you own first                                                        |
 | A thread you started                     | Nothing catches it, and the process ends                                         | Catch every exception at the top of the thread                                              |
 
 A `[LuaFunction]` failure reaches the script that called it and is not written to `HostLog` by itself.

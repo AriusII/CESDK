@@ -4,8 +4,6 @@ using System.Runtime.InteropServices;
 using CESDK.Hosting.Diagnostics;
 using CESDK.Lua.Callbacks;
 using CESDK.Lua.Calls;
-using CESDK.Lua.Interop.Api;
-using CESDK.Lua.Interop.Types;
 using CESDK.Lua.Runtime;
 using CESDK.Lua.State;
 
@@ -18,7 +16,7 @@ namespace CESDK.Hosting.Threading;
 ///     as its only upvalue; the thunk runs the item with whatever state the host passes and returns nothing.
 /// </summary>
 /// <remarks>
-///     Cost per dispatch: one handle, one work item, one Lua closure, one protected call, plus the host's own
+///     Cost per dispatch: one work item, one lifetime-managed Lua callback and one protected call, plus the host's own
 ///     synchronization. This is a thread hop, never a hot path. The mechanics (closure, upvalue, capture and rethrow)
 ///     are exercised by tests against a Lua stand-in for <c>synchronize</c>; that the real host runs the closure on its
 ///     main thread from a .NET worker thread is inferred from the documented behaviour of the global and is not
@@ -49,16 +47,16 @@ internal static unsafe class MainThreadDispatcher
             throw new InvalidOperationException(
                 "The host defines no 'synchronize' function; main-thread dispatch needs Cheat Engine's Lua environment.");
 
-        GCHandle<object> handle = new(item);
-        try
+        status = LuaCallback.TryCreate(l, new LuaNativeFunction(&Thunk), item, out var callback);
+        if (!status.IsOk)
+            throw new InvalidOperationException("The dispatch callback could not be created: " +
+                                                LuaError.FromStack(l, status).Message);
+
+        using (callback)
         {
-            l.PushLightUserdata(GCHandle<object>.ToIntPtr(handle));
-            LuaApi.lua_pushcclosure((lua_State*)l.Handle, &Thunk, 1);
+            if (!callback!.TryPush(l))
+                throw new InvalidOperationException("The plugin was disabled before the dispatch callback could run.");
             status = l.TryCall(1, 0);
-        }
-        finally
-        {
-            handle.Dispose();
         }
 
         if (!status.IsOk)
@@ -68,11 +66,11 @@ internal static unsafe class MainThreadDispatcher
 
     // lua_CFunction: runs the work item carried by upvalue 1. Returns no values; failures are captured in the item.
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static int Thunk(lua_State* l)
+    private static int Thunk(nint l)
     {
         try
         {
-            if (LuaThunk.TryGetState(new LuaState((nint)l), out MainThreadWorkItem? item)) item.Execute();
+            if (LuaThunk.TryGetState(new LuaState(l), out MainThreadWorkItem? item)) item.Execute();
         }
         catch (Exception exception)
         {

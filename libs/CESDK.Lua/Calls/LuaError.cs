@@ -42,8 +42,8 @@ public readonly struct LuaError(LuaStatus status, string message) : IEquatable<L
     /// </returns>
     /// <remarks>
     ///     Never runs Lua code: a non-string, non-number error value is described by its type instead of being passed to
-    ///     <c>tostring</c>, because a <c>__tostring</c> metamethod could raise. A number is read through
-    ///     <c>lua_tolstring</c>, which rewrites that stack slot as a string; harmless for a value about to be discarded.
+    ///     <c>tostring</c>, because a <c>__tostring</c> metamethod could raise. Numbers are formatted in managed code,
+    ///     avoiding the allocating numeric conversion performed by <c>lua_tolstring</c>.
     /// </remarks>
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static unsafe LuaError FromStack(LuaState state, LuaStatus status)
@@ -53,10 +53,13 @@ public readonly struct LuaError(LuaStatus status, string message) : IEquatable<L
         switch (state.TypeOf(-1))
         {
             case LuaType.String:
-            case LuaType.Number:
                 nuint length;
                 var bytes = LuaApi.lua_tolstring(state.Pointer, -1, &length);
                 return new LuaError(status, Encoding.UTF8.GetString(bytes, checked((int)length)));
+            case LuaType.Number:
+                return new LuaError(status, LuaApi.lua_isinteger(state.Pointer, -1) != 0
+                    ? LuaApi.lua_tointegerx(state.Pointer, -1, null).ToString(CultureInfo.InvariantCulture)
+                    : LuaApi.lua_tonumberx(state.Pointer, -1, null).ToString("G", CultureInfo.InvariantCulture));
             case LuaType.Nil:
                 return new LuaError(status, "(error object is a nil value)");
             default:

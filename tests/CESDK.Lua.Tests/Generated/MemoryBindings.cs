@@ -21,11 +21,15 @@ internal static partial class MemoryBindings
     ///     is missing, or the call raised.
     /// </returns>
     [LuaGlobal("readInteger")]
-    public static partial bool TryReadInt32(nuint address, out int value);
+    private static partial bool TryReadInt32Raw(nuint address, bool signed, out int value);
+
+    public static bool TryReadInt32(nuint address, out int value) => TryReadInt32Raw(address, true, out value);
 
     /// <summary>The throwing form of the same binding: every failure is a <see cref="LuaException" />.</summary>
     [LuaGlobal("readInteger")]
-    public static partial int ReadInt32(nuint address);
+    private static partial int ReadInt32Raw(nuint address, bool signed);
+
+    public static int ReadInt32(nuint address) => ReadInt32Raw(address, true);
 }
 
 // ---- what the generator emits -------------------------------------------------------------------------------------
@@ -33,7 +37,7 @@ internal static partial class MemoryBindings
 {
     private static readonly LuaRef s_readInteger = new();
 
-    public static partial bool TryReadInt32(nuint address, out int value)
+    private static partial bool TryReadInt32Raw(nuint address, bool signed, out int value)
     {
         var L = LuaRuntime.AcquireState(); // one state acquisition per operation
         var top = L.Top; // explicit settop: no EH region on the success path
@@ -42,7 +46,8 @@ internal static partial class MemoryBindings
             return LuaCallSupport.Fail(L, top, out value); // cold, NoInlining: restore top, default the result
 
         AddressMarshaller.Push(L, address); // pushinteger of the address bits
-        if (!L.TryCall(1, 1).IsOk) // lua_pcallk(L, 1, 1, 0, 0, null)
+        BooleanMarshaller.Push(L, signed);
+        if (!L.TryCall(2, 1).IsOk) // lua_pcallk(L, 2, 1, 0, 0, null)
             return LuaCallSupport.Fail(L, top, out value); // the error value is discarded with the frame
 
         var ok = Int32Marshaller.TryRead(L, -1, out value); // tointegerx + range check; nil => false, no exception
@@ -51,7 +56,7 @@ internal static partial class MemoryBindings
     }
 
     // The throwing form has the same three exits, each a [DoesNotReturn] cold helper that restores the stack first.
-    public static partial int ReadInt32(nuint address)
+    private static partial int ReadInt32Raw(nuint address, bool signed)
     {
         var L = LuaRuntime.AcquireState();
         var top = L.Top;
@@ -59,7 +64,8 @@ internal static partial class MemoryBindings
             LuaCallSupport.ThrowUnresolvedGlobal(L, top, "readInteger"); // exit 1: no such function
 
         AddressMarshaller.Push(L, address);
-        var status = L.TryCall(1, 1);
+        BooleanMarshaller.Push(L, signed);
+        var status = L.TryCall(2, 1);
         if (!status.IsOk) LuaCallSupport.Throw(L, top, status); // exit 2: the call raised
 
         if (!Int32Marshaller.TryRead(L, -1, out var value))

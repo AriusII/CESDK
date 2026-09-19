@@ -24,7 +24,7 @@ public sealed class LuaRefTests
         Assert.True(reference.IsResolved);
         Assert.True(reference.IsCurrent);
         Assert.Equal(LuaRuntime.Epoch, reference.Epoch);
-        Assert.True(reference.Reference > LuaApi.LUA_RIDX_LAST);
+        Assert.True(reference.Reference > 0); // Slots belong to the private table, not the host registry.
 
         Assert.True(L.TryPushRef(reference));
         Assert.Equal("kept alive", LuaTest.ReadString(L, -1));

@@ -1,11 +1,12 @@
 using System.Runtime.CompilerServices;
 using CESDK.Annotations.Lua;
+using CESDK.Lua.Calls;
+using CESDK.Lua.Interop.Protected;
 using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.State;
 
-// Raw table access and Lua-owned memory: no metamethod is ever consulted, so nothing here runs Lua code. Members
-// that allocate inside Lua say so.
+// Raw table access bypasses metamethods. Allocations can run finalizers and use the native protection boundary.
 public readonly unsafe partial struct LuaState
 {
     /// <summary>Pushes a new empty table (<c>lua_createtable</c>), pre-sized when the hints are known.</summary>
@@ -16,7 +17,7 @@ public readonly unsafe partial struct LuaState
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CreateTable(int arraySlots = 0, int recordSlots = 0)
     {
-        lua_createtable(Pointer, arraySlots, recordSlots);
+        CheckProtectedResult(new LuaStatus(LuaProtectedApi.CreateTable(Pointer, arraySlots, recordSlots)));
     }
 
     /// <summary>Pops a key and pushes <c>t[key]</c> without metamethods (<c>lua_rawget</c>).</summary>
@@ -78,7 +79,8 @@ public readonly unsafe partial struct LuaState
             return false;
         }
 
-        lua_rawset(Pointer, tableIndex);
+        var status = new LuaStatus(LuaProtectedApi.RawSet(Pointer, tableIndex));
+        CheckProtectedResult(status);
         return true;
     }
 
@@ -90,7 +92,7 @@ public readonly unsafe partial struct LuaState
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RawSetIndex(int tableIndex, long key)
     {
-        lua_rawseti(Pointer, tableIndex, key);
+        CheckProtectedResult(new LuaStatus(LuaProtectedApi.RawSetI(Pointer, tableIndex, key)));
     }
 
     /// <summary>Pops a value and does <c>t[p] = value</c> for a light-userdata key without metamethods (<c>lua_rawsetp</c>).</summary>
@@ -101,7 +103,7 @@ public readonly unsafe partial struct LuaState
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RawSetPointer(int tableIndex, nint key)
     {
-        lua_rawsetp(Pointer, tableIndex, (void*)key);
+        CheckProtectedResult(new LuaStatus(LuaProtectedApi.RawSetP(Pointer, tableIndex, key)));
     }
 
     /// <summary>Whether two values are primitively equal, without <c>__eq</c> (<c>lua_rawequal</c>).</summary>
@@ -141,6 +143,7 @@ public readonly unsafe partial struct LuaState
     [LuaStackEffect(1)]
     public nint NewUserdata(nuint size)
     {
-        return (nint)lua_newuserdata(Pointer, size);
+        CheckProtectedResult(new LuaStatus(LuaProtectedApi.NewUserdata(Pointer, size)));
+        return (nint)lua_touserdata(Pointer, -1);
     }
 }

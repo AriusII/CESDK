@@ -30,20 +30,31 @@ public sealed class LuaGlobalCallEmitterTests
                 {
                     global::CESDK.Lua.State.LuaState __L = global::CESDK.Lua.Runtime.LuaRuntime.AcquireState();
                     int __top = __L.Top;
-                    if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_readInteger, "readInteger"u8))
+                    try
                     {
-                        return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
-                    }
+                        if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_readInteger, "readInteger"u8))
+                        {
+                            return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                        }
 
-                    global::CESDK.Lua.Marshalling.AddressMarshaller.Push(__L, address);
-                    if (!__L.TryCall(1, 1).IsOk)
+                        global::CESDK.Lua.Marshalling.AddressMarshaller.Push(__L, address);
+                        if (!__L.TryCall(1, 1).IsOk)
+                        {
+                            return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                        }
+
+                        bool __ok = global::CESDK.Lua.Marshalling.Int32Marshaller.TryRead(__L, -1, out value);
+                        return __ok;
+                    }
+                    catch (global::CESDK.Lua.Calls.LuaException)
                     {
-                        return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out value);
+                        value = default;
+                        return false;
                     }
-
-                    bool __ok = global::CESDK.Lua.Marshalling.Int32Marshaller.TryRead(__L, -1, out value);
-                    __L.SetTop(__top);
-                    return __ok;
+                    finally
+                    {
+                        __L.SetTop(__top);
+                    }
                 }
 
                 """.ReplaceLineEndings("\n"),
@@ -71,15 +82,22 @@ public sealed class LuaGlobalCallEmitterTests
                 {
                     global::CESDK.Lua.State.LuaState __L = global::CESDK.Lua.Runtime.LuaRuntime.AcquireState();
                     int __top = __L.Top;
-                    if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_beep, "beep"u8))
+                    try
                     {
-                        global::CESDK.Lua.CompilerServices.LuaCallSupport.ThrowUnresolvedGlobal(__L, __top, "beep");
-                    }
+                        if (!global::CESDK.Lua.CompilerServices.LuaGlobalFunctions.TryPush(__L, s_luaGlobal_beep, "beep"u8))
+                        {
+                            global::CESDK.Lua.CompilerServices.LuaCallSupport.ThrowUnresolvedGlobal(__L, __top, "beep");
+                        }
 
-                    global::CESDK.Lua.Calls.LuaStatus __status = __L.TryCall(0, 0);
-                    if (!__status.IsOk)
+                        global::CESDK.Lua.Calls.LuaStatus __status = __L.TryCall(0, 0);
+                        if (!__status.IsOk)
+                        {
+                            global::CESDK.Lua.CompilerServices.LuaCallSupport.Throw(__L, __top, __status);
+                        }
+                    }
+                    finally
                     {
-                        global::CESDK.Lua.CompilerServices.LuaCallSupport.Throw(__L, __top, __status);
+                        __L.SetTop(__top);
                     }
                 }
 
@@ -117,7 +135,8 @@ public sealed class LuaGlobalCallEmitterTests
             StringComparison.Ordinal);
         Assert.Contains("ThrowUnexpectedResult(__L, __top, -1, \"readString\", \"a string\");", text,
             StringComparison.Ordinal);
-        Assert.EndsWith("    __L.SetTop(__top);\n    return __result;\n}\n", text, StringComparison.Ordinal);
+        Assert.Contains("return __result;\n    }\n    finally\n    {\n        __L.SetTop(__top);", text,
+            StringComparison.Ordinal);
     }
 
     [Fact]

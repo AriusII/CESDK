@@ -111,7 +111,7 @@ public sealed unsafe class DisablePluginTests
 
     [Fact]
     [Trait("Category", "NativeLua")]
-    public void OnDisable_throwing_is_reported_as_FALSE_but_the_plugin_is_disabled_anyway()
+    public void OnDisable_throwing_is_logged_but_reports_TRUE_after_the_plugin_is_disabled()
     {
         HostingTest.RequireNativeLua();
         var sink = HostingTest.Reset();
@@ -122,7 +122,7 @@ public sealed unsafe class DisablePluginTests
 
         var result = host.CallDisable();
 
-        Assert.False(result.IsTrue);
+        Assert.True(result.IsTrue);
         Assert.Equal(1, plugin.DisableCalls);
         Assert.False(PluginHost.IsEnabled);
         Assert.False(LuaRuntime.IsAttached);

@@ -1,12 +1,14 @@
 using System;
 using System.Runtime.CompilerServices;
 using CESDK.Annotations.Lua;
+using CESDK.Lua.Calls;
+using CESDK.Lua.Interop.Protected;
 using CESDK.Lua.Text;
 using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.State;
 
-// Pushes: one C API call each. None runs Lua code; the string pushes allocate inside Lua.
+// Scalar pushes do not run Lua code. Allocating string pushes use the native protection boundary.
 public readonly unsafe partial struct LuaState
 {
     /// <summary>Pushes <c>nil</c>.</summary>
@@ -70,19 +72,40 @@ public readonly unsafe partial struct LuaState
     /// </summary>
     /// <param name="utf8">The bytes; may be empty.</param>
     /// <remarks>
-    ///     Allocates inside Lua (string interning): can raise on memory exhaustion or through a failing <c>__gc</c>
-    ///     finalizer.
+    ///     Allocates inside Lua under native protection. A failed allocation or finalizer becomes a managed
+    ///     <see cref="LuaException" />; the original stack depth is preserved on failure.
     /// </remarks>
     [LuaStackEffect(1)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void PushString(ReadOnlySpan<byte> utf8)
     {
-        // An empty span pins to null; Lua is handed a valid address anyway.
-        byte empty = 0;
-        fixed (byte* bytes = utf8)
+        CheckProtectedResult(TryPushString(utf8));
+    }
+
+    /// <summary>Pushes bytes as a Lua string under native protection; on failure pushes one error value instead.</summary>
+    /// <param name="utf8">The bytes, including any embedded NULs.</param>
+    /// <returns>The Lua status of the allocation and any finalizer it ran.</returns>
+    [LuaStackEffect(1)]
+    public LuaStatus TryPushString(ReadOnlySpan<byte> utf8)
+    {
+        return new LuaStatus(LuaProtectedApi.PushBytes(Pointer, utf8));
+    }
+
+    // Throw only after native protection has returned; consuming the error preserves the operation's input contract.
+    internal void CheckProtectedResult(LuaStatus status)
+    {
+        if (status.IsOk) return;
+        LuaError error;
+        try
         {
-            _ = lua_pushlstring(Pointer, bytes is null ? &empty : bytes, (nuint)utf8.Length);
+            error = LuaError.FromStack(this, status);
         }
+        finally
+        {
+            Pop(1);
+        }
+
+        throw new LuaException(error);
     }
 
     /// <summary>
@@ -99,12 +122,8 @@ public readonly unsafe partial struct LuaState
     [SkipLocalsInit] // Encode writes the bytes it reports before anything reads them; zeroing the 512-byte buffer first would be dead stores.
     public void PushString(ReadOnlySpan<char> text)
     {
-        // Straight-line on purpose (no 'using'): nothing between Encode and Dispose can throw a managed exception, and a
-        // try/finally here would put an EH region on every string push and make the method non-inlinable. A pooled
-        // buffer is returned only on the normal path; abandoning it on a native raise is the safe outcome.
         Span<byte> scratch = stackalloc byte[Utf8Scratch.StackBufferSize];
-        var utf8 = Utf8Scratch.Encode(text, scratch);
+        using var utf8 = Utf8Scratch.Encode(text, scratch);
         PushString(utf8.Bytes);
-        utf8.Dispose();
     }
 }

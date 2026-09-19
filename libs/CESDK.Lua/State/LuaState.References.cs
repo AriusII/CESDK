@@ -1,16 +1,16 @@
 using System.Runtime.CompilerServices;
 using CESDK.Annotations.Lua;
+using CESDK.Lua.Calls;
 using CESDK.Lua.References;
 using CESDK.Lua.Runtime;
-using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.State;
 
-// Registry references: create from the stack top, push back by slot number.
+// References use a private registry table. The host and other plugins own separate free lists.
 public readonly unsafe partial struct LuaState
 {
     /// <summary>
-    ///     Pops the value on top and stores it in the registry, returning a reference stamped with the current
+    ///     Pops the value on top and stores it in this SDK's private registry table, returning a reference stamped with the current
     ///     <see cref="LuaRuntime.Epoch" /> (<c>luaL_ref</c>).
     /// </summary>
     /// <returns>A new, resolved reference; the caller owns it and releases it with <see cref="LuaRef.Release" />.</returns>
@@ -22,8 +22,16 @@ public readonly unsafe partial struct LuaState
     public LuaRef CreateRef()
     {
         var epoch = LuaRuntime.Epoch;
-        var reference = luaL_ref(Pointer, LUA_REGISTRYINDEX);
+        CheckProtectedResult(LuaReferences.Create(this, out var reference));
         return new LuaRef(reference, epoch);
+    }
+
+    internal LuaStatus TryCreateRef(out LuaRef? reference)
+    {
+        var epoch = LuaRuntime.Epoch;
+        var status = LuaReferences.Create(this, out var slot);
+        reference = status.IsOk ? new LuaRef(slot, epoch) : null;
+        return status;
     }
 
     /// <summary>
@@ -32,13 +40,14 @@ public readonly unsafe partial struct LuaState
     /// </summary>
     /// <param name="reference">The reference; may be unresolved or stale, in which case nothing is pushed.</param>
     /// <returns><see langword="true" /> when the value was pushed.</returns>
-    /// <remarks>Never raises. One volatile read, one epoch comparison and one C API call.</remarks>
+    /// <remarks>Lookup and release share a gate, so a slot cannot be reused between validation and pushing its value.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryPushRef(LuaRef reference)
     {
-        if (reference is null || !reference.TryGetCurrent(out var slot)) return false;
-
-        _ = lua_rawgeti(Pointer, LUA_REGISTRYINDEX, slot);
-        return true;
+        lock (LuaReferences.Gate)
+        {
+            if (reference is null || !reference.TryGetCurrent(out var slot)) return false;
+            return LuaReferences.Push(this, slot);
+        }
     }
 }

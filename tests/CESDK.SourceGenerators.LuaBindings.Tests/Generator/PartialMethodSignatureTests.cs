@@ -82,6 +82,19 @@ public sealed class PartialMethodSignatureTests(RoslynFixture roslyn) : IClassFi
     }
 
     [Fact]
+    public void Generator_preserves_the_extension_receiver_in_the_implementing_declaration()
+    {
+        const string Source = Usings +
+                              "namespace Demo; public static partial class Holder { [LuaGlobal(\"g\")] public static partial bool TryG(this nuint address, out int value); }";
+
+        var run = roslyn.Run(Source);
+
+        run.AssertCompilesClean();
+        Assert.Contains("public static partial bool TryG(this nuint address, out int value)", run.SingleGeneratedText,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Generator_parameter_named_like_a_generated_local_fails_loudly_not_silently()
     {
         // A known, accepted limitation: the emitter's own locals share the implementing declaration's parameter scope,

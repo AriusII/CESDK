@@ -463,15 +463,15 @@ namespace Fixed2004;
 internal static partial class Memory
 {
     [LuaGlobal("readInteger")]
-    public static partial bool TryReadInt32(nuint address, out int value);
+    public static partial bool TryReadInt32(nuint address, bool signed, out int value);
 
     [LuaGlobal("readInteger")]
-    public static partial int ReadInt32(nuint address);
+    public static partial int ReadInt32(nuint address, bool signed);
 }
 ```
 
 Both declarations bind `readInteger`: a Try form and a throwing form (see
-[03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)).
+[03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)). Pass `true` for a signed 32-bit result.
 
 ### CESDK9101 · An x86 plugin
 

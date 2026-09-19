@@ -39,8 +39,11 @@ public sealed class SpecFileParserTests
         Assert.Equal("readInteger", tryReadInt32.Call.GlobalName);
         Assert.Equal(LuaCallForm.Try, tryReadInt32.Call.Form);
         Assert.Equal("public static", tryReadInt32.Call.Modifiers);
-        Assert.Single(tryReadInt32.Call.Arguments.AsSpan().ToArray());
+        Assert.Equal(2, tryReadInt32.Call.Arguments.Length);
         Assert.Equal(LuaValueKind.Address, tryReadInt32.Call.Arguments[0].Kind);
+        Assert.True(tryReadInt32.Call.Arguments[1].IsFixed);
+        Assert.Equal(LuaValueKind.Boolean, tryReadInt32.Call.Arguments[1].Kind);
+        Assert.Equal("true", tryReadInt32.Call.Arguments[1].FixedValue);
         Assert.Single(tryReadInt32.Call.Results.AsSpan().ToArray());
         Assert.Equal(LuaValueKind.Int32, tryReadInt32.Call.Results[0].Kind);
         Assert.StartsWith("Reads a 32-bit integer", tryReadInt32.Summary, StringComparison.Ordinal);
@@ -483,6 +486,22 @@ public sealed class SpecFileParserTests
 
         Assert.Empty(spec.Calls.AsSpan().ToArray());
         Assert.NotEmpty(spec.Issues.AsSpan().ToArray());
+    }
+
+    [Theory]
+    [InlineData("fixed: boolean:maybe")]
+    [InlineData("fixed: int32:1")]
+    [InlineData("fixed: boolean:true; System.Console.WriteLine()")]
+    public void A_fixed_argument_accepts_only_boolean_literals(string fixedLine)
+    {
+        var text = "namespace: Demo\ntype: T\n\nglobal: readInteger\nmethod: M\nform: try\narg: address:address\n" +
+                   fixedLine + "\nresult: value:int32\ndoc: d.\n";
+
+        var spec = SpecFileParser.Parse("x.cesdk-api.txt", text);
+
+        Assert.Empty(spec.Calls.AsSpan().ToArray());
+        Assert.Contains(spec.Issues,
+            static issue => issue.Message.Contains("fixed argument", StringComparison.Ordinal));
     }
 
     [Fact]

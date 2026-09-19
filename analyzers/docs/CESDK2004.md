@@ -71,7 +71,7 @@ namespace MyPlugin;
 public static partial class Memory
 {
     [LuaGlobal("readInteger")]
-    public static partial int TryReadInt32(nuint address, out int value);   // CESDK2004: must return bool
+    public static partial int TryReadInt32(nuint address, bool signed, out int value);   // CESDK2004: must return bool
 }
 ```
 
@@ -86,7 +86,7 @@ namespace MyPlugin;
 public static partial class Memory
 {
     [LuaGlobal("readInteger")]
-    public static partial bool TryReadInt32(nuint address, out int value);
+    public static partial bool TryReadInt32(nuint address, bool signed, out int value);
 }
 ```
 

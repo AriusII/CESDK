@@ -8,14 +8,13 @@ using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.State;
 
-// Protected operations: everything that can run a metamethod, arbitrary Lua code or raise for a reason other than
-// memory goes through lua_pcallk here. Each member documents its stack effect on success; on failure every member
+// Protected operations: metamethods and allocating argument pushes run behind native lua_pcallk boundaries.
+// Each member documents its stack effect on success; on failure every member
 // leaves exactly one error value on top of the stack in place of its results, and the returned LuaStatus says why.
 //
 // The helper functions (LuaHelpers) are plain Lua functions stored in the state's registry, so a raise inside them
 // unwinds Lua frames only. Cost per operation: one lua_rawgetp for the helper, the argument pushes, one lua_pcallk,
-// plus the Lua call itself. The only unprotected allocation is the push of a key string, which can raise on memory
-// exhaustion or through a failing __gc finalizer like every other string push.
+// plus the Lua call itself. Key allocation uses the native bridge, including errors from pending finalizers.
 public readonly unsafe partial struct LuaState
 {
     /// <summary>
@@ -115,10 +114,12 @@ public readonly unsafe partial struct LuaState
     /// <returns>The status.</returns>
     public LuaStatus TryGetGlobal(ReadOnlySpan<byte> name)
     {
+        var top = Top;
         var status = LuaHelpers.Push(Pointer, LuaHelper.GetGlobal);
         if (!status.IsOk) return status;
 
-        PushString(name);
+        status = TryPushString(name);
+        if (!status.IsOk) return KeepProtectedError(top, status);
         return TryCall(1, 1);
     }
 
@@ -131,6 +132,7 @@ public readonly unsafe partial struct LuaState
     /// <returns>The status.</returns>
     public LuaStatus TrySetGlobal(ReadOnlySpan<byte> name)
     {
+        var top = Top - 1;
         // [.. v] -> [.. v helper] -> [.. v helper k] -> [.. helper k v]
         var status = LuaHelpers.Push(Pointer, LuaHelper.SetGlobal);
         if (!status.IsOk)
@@ -140,7 +142,8 @@ public readonly unsafe partial struct LuaState
             return status;
         }
 
-        PushString(name);
+        status = TryPushString(name);
+        if (!status.IsOk) return KeepProtectedError(top, status);
         lua_rotate(Pointer, -3, -1);
         return TryCall(2, 0);
     }
@@ -154,11 +157,13 @@ public readonly unsafe partial struct LuaState
     /// <returns>The status.</returns>
     public LuaStatus TryGetField(int index, ReadOnlySpan<byte> key)
     {
+        var top = Top;
         var status = LuaHelpers.Push(Pointer, LuaHelper.Index);
         if (!status.IsOk) return status;
 
         lua_pushvalue(Pointer, Shift(index, 1));
-        PushString(key);
+        status = TryPushString(key);
+        if (!status.IsOk) return KeepProtectedError(top, status);
         return TryCall(2, 1);
     }
 
@@ -174,6 +179,7 @@ public readonly unsafe partial struct LuaState
     /// <returns>The status.</returns>
     public LuaStatus TrySetField(int index, ReadOnlySpan<byte> key)
     {
+        var top = Top - 1;
         // [.. v] -> [.. v h] -> [.. v h o] -> [.. v h o k] -> [.. h o k v]
         var status = LuaHelpers.Push(Pointer, LuaHelper.NewIndex);
         if (!status.IsOk)
@@ -184,9 +190,17 @@ public readonly unsafe partial struct LuaState
         }
 
         lua_pushvalue(Pointer, Shift(index, 1));
-        PushString(key);
+        status = TryPushString(key);
+        if (!status.IsOk) return KeepProtectedError(top, status);
         lua_rotate(Pointer, -4, -1);
         return TryCall(3, 0);
+    }
+
+    internal LuaStatus KeepProtectedError(int top, LuaStatus status)
+    {
+        Copy(-1, top + 1);
+        SetTop(top + 1);
+        return status;
     }
 
     /// <summary>

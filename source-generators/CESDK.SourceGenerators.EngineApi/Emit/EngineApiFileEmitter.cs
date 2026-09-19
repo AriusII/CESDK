@@ -168,6 +168,8 @@ internal static class EngineApiFileEmitter
         var first = true;
         foreach (var argument in call.Arguments)
         {
+            if (argument.IsFixed) continue;
+
             if (!first) writer.Write(", ");
 
             first = false;
@@ -207,6 +209,8 @@ internal static class EngineApiFileEmitter
         var first = true;
         foreach (var argument in call.Arguments)
         {
+            if (argument.IsFixed) continue;
+
             if (!first) writer.Write(", ");
 
             first = false;

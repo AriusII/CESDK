@@ -34,8 +34,8 @@ namespace CESDK.Hosting.Plugin;
 ///         <b>Failures.</b> An exception thrown by <see cref="OnEnable" /> makes the enable fail (Cheat Engine is told
 ///         <c>FALSE</c>, the runtime binding is withdrawn, the exception is logged through <see cref="HostLog" />); one
 ///         thrown
-///         by <see cref="OnDisable" /> is logged and reported as <c>FALSE</c>, but the plugin is disabled regardless. No
-///         exception ever reaches Cheat Engine.
+///         by <see cref="OnDisable" /> is logged, then cleanup completes and Cheat Engine is told <c>TRUE</c> so its
+///         bookkeeping matches the disabled plugin. No exception ever reaches Cheat Engine.
 ///     </para>
 /// </remarks>
 public abstract class CheatEnginePlugin

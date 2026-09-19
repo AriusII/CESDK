@@ -58,7 +58,7 @@ returns `null` and `CheatEnginePlugin.Context` throws.
 | `OnEnable` throws                                                                                                                            | `FALSE`               | Runtime detached, context withdrawn, exception logged |
 | Constructor throws, or the factory returns `null`                                                                                            | `FALSE`               | Plugin disabled, the next enable retries              |
 | Exports record too small, no `GetLuaState`, no Lua module, or a failed registry check                                                        | `FALSE`               | Plugin disabled, reason logged                        |
-| `OnDisable` throws                                                                                                                           | `FALSE`               | Plugin disabled anyway                                |
+| `OnDisable` throws                                                                                                                           | `TRUE`                | Failure logged; plugin disabled                        |
 | Enable while enabled, or disable while disabled                                                                                              | `TRUE`                | Nothing changes, warning logged                       |
 | Lifecycle callback nested in `OnEnable` or `OnDisable` on the same thread, for example a plugin dialog handled while `ProcessMessages` pumps | `FALSE`               | The outer transition decides the state                |
 

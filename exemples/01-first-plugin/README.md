@@ -107,7 +107,8 @@ internal static partial class Commands
 dotnet build -c Release
 ```
 
-Keep the whole output folder together. Cheat Engine loads `MyPlugin.dll`, and the CESDK assemblies must sit next to it.
+Keep the whole output folder together. Cheat Engine loads `MyPlugin.dll`, and the CESDK assemblies plus the native Lua
+protection bridge must sit next to it. The package supplies the bridge; no C compiler or xmake is required.
 
 ```text
 bin/Release/net10.0/
@@ -122,22 +123,32 @@ bin/Release/net10.0/
     CESDK.Lua.dll
     CESDK.Lua.Interop.dll
     CESDK.dll
+    cesdk-lua-bridge.dll
 ```
 
 ### 4. Let Cheat Engine run a .NET 10 plugin
 
 > [!IMPORTANT]
-> Cheat Engine 7.7 asks for the .NET 9 runtime, so a .NET 10 plugin needs one roll-forward setting. Open a shell in the
-> Cheat Engine folder and start Cheat Engine from it:
+> Cheat Engine 7.7 asks for .NET 9. Before starting it, edit the Cheat Engine folder's `ce.runtimeconfig.json` in an
+> elevated editor to request .NET 10 explicitly:
+>
+> - Set `runtimeOptions.tfm` to `net10.0`.
+> - Set the `version` of every framework request to `10.0.0`: `Microsoft.NETCore.App`,
+>   `Microsoft.WindowsDesktop.App`, and `Microsoft.AspNetCore.App` (whether the file uses `framework` or `frameworks`).
+> - Set `runtimeOptions.rollForward` to `LatestMinor`. If a framework entry has its own `rollForward`, set it to
+>   `LatestMinor` too.
+>
+> With that configuration, Cheat Engine stays on .NET 10 even when .NET 9 or 11 is installed. A shell launch can repeat
+> the same policy, but does not select .NET 10 by itself:
 >
 > ```powershell
-> $env:DOTNET_ROLL_FORWARD = "Major"
+> $env:DOTNET_ROLL_FORWARD = "LatestMinor"
 > .\cheatengine-x86_64.exe
 > ```
 >
-> You can also edit `ce.runtimeconfig.json` in the Cheat Engine folder so that it requests `10.0.0`. The x64 .NET 10
-> runtimes `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App` and `Microsoft.AspNetCore.App` must be installed
-> (`dotnet --list-runtimes` lists them).
+> Keep the existing framework names. This changes only Cheat Engine's runtime request; the x64
+> .NET 10 runtimes `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App` and `Microsoft.AspNetCore.App` must already
+> be installed (`dotnet --list-runtimes` lists them).
 
 ### 5. Load it and call it
 
@@ -185,10 +196,10 @@ enable gets a fresh Lua runtime epoch, so never keep a Lua reference or a `Plugi
 
 | Symptom                                    | Likely cause                                                                    | Fix                                                                                                         |
 |--------------------------------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| The plugin is not listed after **Add new** | The plugin DLL is separated from the CESDK assemblies                           | Keep the whole `bin/Release/net10.0` folder together                                                        |
+| The plugin is not listed after **Add new** | The plugin DLL is separated from CESDK dependencies                             | Keep the whole `bin/Release/net10.0` folder together                                                        |
 | Cheat Engine refuses the DLL               | No generated entry point                                                        | Check for `CESDK0001` or `CESDK0002` in the build output, and that `CesdkGenerateEntryPoint` is not `false` |
 | The plugin ticks and `greet` is `nil`      | `OnEnable` threw, so Cheat Engine was told the enable failed                    | Read the log below: the host logs every failed enable                                                       |
-| Cheat Engine cannot start the runtime      | The x64 .NET 10 runtimes are missing or the roll-forward setting is not applied | Run `dotnet --list-runtimes` and apply step 4                                                               |
+| Cheat Engine cannot start the runtime      | The x64 .NET 10 runtimes are missing or its runtime configuration still requests .NET 9 | Run `dotnet --list-runtimes` and apply step 4                                                               |
 | `CS9057` in the build                      | The .NET SDK is older than 10.0.401                                             | Update the SDK. The generators are built against Roslyn 5.9                                                 |
 
 To see the host's log, start Sysinternals DebugView, turn on **Capture > Capture Global Win32** and filter for
@@ -200,8 +211,9 @@ To see the host's log, start Sysinternals DebugView, turn on **Capture > Capture
 
 - One `PackageReference` is enough: the package has no NuGet dependencies and brings the analyzers and generators.
 - Building generates `CESDK.CESDK.CEPluginInitialize`, the exact entry point Cheat Engine looks up.
-- An exception thrown by `OnEnable` or `OnDisable` is logged and reported to Cheat Engine as a failed call. It never
-  reaches Cheat Engine itself.
+- An `OnEnable` exception is logged and reported to Cheat Engine as a failed call. An `OnDisable` exception is logged,
+  cleanup still completes, and Cheat Engine receives success to record the disabled state. Neither reaches Cheat
+  Engine itself.
 - A disable and a new enable reuse the same plugin instance.
 
 ## Before you move on

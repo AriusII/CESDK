@@ -63,8 +63,60 @@ jobs:
           Write-Host "Found $($projects.Count) test projects."
           $projects | ForEach-Object { Write-Host "  $($_.BaseName)" }
 
+  native:
+    name: Build native bridge
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@3a1a5dddfc7fa625d9a698738334bf55655a861a # v1
+        with:
+          xmake-version: '3.0.9'
+
+      - name: Build bridge
+        run: |
+          $output = Join-Path $PWD 'artifacts/native/cesdk-lua-bridge'
+          xmake f -P native/cesdk-lua-bridge -o $output -p windows -a x64 -m release -y
+          xmake -P native/cesdk-lua-bridge -y
+          if (-not (Test-Path -LiteralPath "$output/cesdk-lua-bridge.dll" -PathType Leaf)) {
+            throw 'xmake did not produce cesdk-lua-bridge.dll.'
+          }
+
+      - name: Upload bridge
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lua-protection-bridge
+          path: artifacts/native/cesdk-lua-bridge/cesdk-lua-bridge.dll
+          if-no-files-found: error
+          retention-days: 14
+
+      # Run after upload so a failed drift check still leaves the corrected DLL available to download.
+      - name: Verify checked-in bridge matches its source
+        run: |
+          $sourceHash = (Get-FileHash -Algorithm SHA256 native/cesdk-lua-bridge/cesdk_lua_bridge.c).Hash.ToLowerInvariant()
+          $buildHash = (Get-FileHash -Algorithm SHA256 native/cesdk-lua-bridge/xmake.lua).Hash.ToLowerInvariant()
+          $expected = "$sourceHash`:$buildHash"
+          $prebuilt = Resolve-Path native/cesdk-lua-bridge/runtimes/win-x64/native/cesdk-lua-bridge.dll
+          $module = [System.Runtime.InteropServices.NativeLibrary]::Load($prebuilt.Path)
+          try {
+            $address = [System.Runtime.InteropServices.NativeLibrary]::GetExport($module, 'cesdk_lua_bridge_source_fingerprint')
+            $actual = [System.Runtime.InteropServices.Marshal]::PtrToStringAnsi($address)
+          }
+          finally {
+            [System.Runtime.InteropServices.NativeLibrary]::Free($module)
+          }
+          if ($actual -ne $expected) {
+            throw "The checked-in bridge is stale. Expected source fingerprint '$expected', found '$actual'. Download the lua-protection-bridge artifact from this run and commit it."
+          }
+
   build:
     name: Build
+    needs: native
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -79,6 +131,12 @@ jobs:
         with:
           restore: CESDK.slnx
 
+      - name: Use CI-built native bridge
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lua-protection-bridge
+          path: native/cesdk-lua-bridge/runtimes/win-x64/native
+
       # Tests run against Debug, where some guards exist only. Release is what ships.
       - name: Build Debug
         run: dotnet build CESDK.slnx --no-restore -c Debug
@@ -88,7 +146,7 @@ jobs:
 
   test:
     name: Test ${{ matrix.label }}
-    needs: discover
+    needs: [ discover, native ]
     runs-on: windows-latest
     timeout-minutes: 10
     strategy:
@@ -103,6 +161,12 @@ jobs:
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+
+      - name: Use CI-built native bridge
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lua-protection-bridge
+          path: native/cesdk-lua-bridge/runtimes/win-x64/native
 
       # A skipped test fails the Debug job: NativeLua tests skip when the bundled Lua DLL does not bind, and a green check must not hide that.
       # Release keeps one legitimate skip, a guard that only exists in Debug.
@@ -180,6 +244,7 @@ jobs:
 
   pack:
     name: Pack
+    needs: native
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -191,6 +256,12 @@ jobs:
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
+
+      - name: Use CI-built native bridge
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lua-protection-bridge
+          path: native/cesdk-lua-bridge/runtimes/win-x64/native
 
       - name: Pack
         run: dotnet pack src/CESDK -c Release -o artifacts/nuget
@@ -214,7 +285,7 @@ jobs:
   gate:
     name: Gate
     if: ${{ always() }}
-    needs: [ discover, build, test, pack ]
+    needs: [ discover, native, build, test, pack ]
     runs-on: windows-latest
     timeout-minutes: 5
     permissions: { }

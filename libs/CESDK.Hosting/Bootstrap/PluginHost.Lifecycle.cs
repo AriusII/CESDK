@@ -106,9 +106,9 @@ public static unsafe partial class PluginHost
     ///     binding (which neutralizes every live Lua callback) and withdraws the context.
     /// </summary>
     /// <returns>
-    ///     <c>TRUE</c> when the plugin's <c>OnDisable</c> completed without throwing; <c>FALSE</c> when it threw (the
-    ///     plugin is disabled regardless), and when the call re-enters a running <c>OnEnable</c> or <c>OnDisable</c> (nothing
-    ///     is changed then; see <see cref="IsReentered" />).
+    ///     <c>TRUE</c> after the plugin is disabled, including when <c>OnDisable</c> throws after its failure is logged;
+    ///     <c>FALSE</c> when the call re-enters a running <c>OnEnable</c> or <c>OnDisable</c> (nothing is changed then;
+    ///     see <see cref="IsReentered" />).
     /// </returns>
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static Bool32 DisablePlugin()
@@ -308,7 +308,6 @@ public static unsafe partial class PluginHost
                 return true;
             }
 
-            var clean = true;
             var plugin = s_plugin;
             if (plugin is not null)
                 try
@@ -318,7 +317,6 @@ public static unsafe partial class PluginHost
                 catch (Exception exception)
                 {
                     HostLog.Error("DisablePlugin: OnDisable threw; the plugin is disabled anyway.", exception);
-                    clean = false;
                 }
 
             // Detach while the provider is still valid: this is where forgotten callbacks are neutralized.
@@ -328,7 +326,7 @@ public static unsafe partial class PluginHost
                 HostLog.Information(string.Create(CultureInfo.InvariantCulture,
                     $"Plugin {context.PluginId} disabled."));
 
-            return clean;
+            return true;
         }
     }
 }

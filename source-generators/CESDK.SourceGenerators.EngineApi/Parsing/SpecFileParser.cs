@@ -238,6 +238,10 @@ internal static class SpecFileParser
         var arguments = ParseArguments(fields.ArgTokens, issues);
         if (arguments is null) return null;
 
+        var fixedArguments = ParseFixedArguments(fields.FixedTokens, issues);
+        if (fixedArguments is null) return null;
+        arguments.AddRange(fixedArguments);
+
         var results = ParseResults(fields.ResultTokens, issues);
         if (results is null) return null;
 
@@ -292,6 +296,9 @@ internal static class SpecFileParser
                     break;
                 case "arg":
                     fields.ArgTokens.Add((line, value));
+                    break;
+                case "fixed":
+                    fields.FixedTokens.Add((line, value));
                     break;
                 case "result":
                     fields.ResultTokens.Add((line, value));
@@ -434,6 +441,31 @@ internal static class SpecFileParser
         return arguments;
     }
 
+    // A fixed argument has the narrow, host-facing grammar 'kind:value'. It is pushed in call order but deliberately
+    // omitted from the generated C# signature. Only boolean literals are needed by the curated CE surface today; keep
+    // that vocabulary explicit rather than accepting arbitrary C# expressions in a repository text file.
+    private static List<LuaArgumentModel>? ParseFixedArguments(List<(int Line, string Value)> tokens,
+        List<SpecIssue> issues)
+    {
+        List<LuaArgumentModel> arguments = new(tokens.Count);
+        foreach (var (line, value) in tokens)
+        {
+            if (!TryParseNamedValue(value, out var kindToken, out var literal)
+                || !string.Equals(kindToken, "boolean", StringComparison.Ordinal)
+                || !(string.Equals(literal, "true", StringComparison.Ordinal)
+                     || string.Equals(literal, "false", StringComparison.Ordinal)))
+            {
+                issues.Add(new SpecIssue(line,
+                    "'" + value + "' is not a valid fixed argument: expected 'boolean:true' or 'boolean:false'."));
+                return null;
+            }
+
+            arguments.Add(new LuaArgumentModel(literal, LuaValueKind.Boolean, false, FixedValue: literal));
+        }
+
+        return arguments;
+    }
+
     private static List<LuaResultModel>? ParseResults(List<(int Line, string Value)> tokens, List<SpecIssue> issues)
     {
         List<LuaResultModel> results = new(tokens.Count);
@@ -536,6 +568,7 @@ internal static class SpecFileParser
     private sealed class EntryFields
     {
         public readonly List<(int Line, string Value)> ArgTokens = [];
+        public readonly List<(int Line, string Value)> FixedTokens = [];
         public readonly List<(int Line, string Value)> ResultTokens = [];
         public string? Doc;
         public string? Form;

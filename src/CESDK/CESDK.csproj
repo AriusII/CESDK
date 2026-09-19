@@ -11,7 +11,7 @@
     <PackageReleaseNotes>$(PackageProjectUrl)/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <EnablePackageValidation>true</EnablePackageValidation>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);_CesdkEmbedLibraries</TargetsForTfmSpecificBuildOutput>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_CesdkPackRoslynComponents</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_CesdkPackRoslynComponents;_CesdkPackLuaBridge</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <!-- A pack without a build sets NoBuild for referenced projects too, which then fail with NETSDK1085 when asked to build. -->
@@ -71,6 +71,18 @@
   <Target Name="_CesdkPackRoslynComponents" DependsOnTargets="ResolveProjectReferences">
     <ItemGroup>
       <TfmSpecificPackageFile Include="@(Analyzer->WithMetadataValue('PackAsAnalyzer', 'true'))" PackagePath="analyzers/dotnet/cs"/>
+    </ItemGroup>
+  </Target>
+
+  <!-- The native protection shim is a runtime asset, not a build dependency. Consumers never need xmake or a C toolchain. -->
+  <Target Name="_CesdkPackLuaBridge">
+    <PropertyGroup>
+      <_CesdkLuaBridgePath>$(RepoRoot)native\cesdk-lua-bridge\runtimes\win-x64\native\cesdk-lua-bridge.dll</_CesdkLuaBridgePath>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_CesdkLuaBridgePath)')"
+           Text="The prebuilt Lua protection bridge is missing at '$(_CesdkLuaBridgePath)'. Rebuild it with xmake before packing CESDK."/>
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_CesdkLuaBridgePath)" PackagePath="runtimes/win-x64/native"/>
     </ItemGroup>
   </Target>
 

@@ -79,7 +79,7 @@ dotnet add package CESDK --prerelease
 |--------------|-------------------------------------------------------------------------------------------------------|
 | .NET SDK     | 10.0.401 or later (older compilers report `CS9057` and skip the generators)                           |
 | Runtimes     | .NET 10 `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App`, `Microsoft.AspNetCore.App`           |
-| Cheat Engine | 7.7 on Windows x64, started with `DOTNET_ROLL_FORWARD=Major` (see [01](../01-first-plugin/README.md)) |
+| Cheat Engine | 7.7 on Windows x64, with `ce.runtimeconfig.json` explicitly requesting .NET 10 for every framework entry (see [01](../01-first-plugin/README.md)) |
 
 ## Attributes
 

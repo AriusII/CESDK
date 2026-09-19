@@ -80,6 +80,7 @@
       <Platform Project="x64"/>
     </Project>
     <Project Path="tests/CESDK.Lua.Interop.Tests/CESDK.Lua.Interop.Tests.csproj"/>
+    <Project Path="tests/CESDK.Lua.FailureProbe/CESDK.Lua.FailureProbe.csproj"/>
     <Project Path="tests/CESDK.Lua.Tests/CESDK.Lua.Tests.csproj"/>
     <Project Path="tests/CESDK.SourceGenerators.EngineApi.Tests/CESDK.SourceGenerators.EngineApi.Tests.csproj"/>
     <Project Path="tests/CESDK.SourceGenerators.EntryPoint.Tests/CESDK.SourceGenerators.EntryPoint.Tests.csproj"/>

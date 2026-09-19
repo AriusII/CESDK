@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using CESDK.Lua.Callbacks;
 using CESDK.Lua.Calls;
 using CESDK.Lua.Interop.Types;
+using CESDK.Lua.Interop.Protected;
 using CESDK.Lua.State;
 using static CESDK.Lua.Interop.Api.LuaApi;
 
@@ -175,7 +176,11 @@ internal static unsafe class LuaHelpers
         if (runStatus != LUA_OK) return new LuaStatus(runStatus);
 
         // The last result is on top; rawsetp pops the top each time, so the keys are assigned in reverse.
-        for (var i = Count - 1; i >= 0; i--) lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)(SKeyBlock + i));
+        for (var i = Count - 1; i >= 0; i--)
+        {
+            var status = new LuaStatus(LuaProtectedApi.RawSetP(L, LUA_REGISTRYINDEX, SKeyBlock + i));
+            if (!status.IsOk) return new LuaState((nint)L).KeepProtectedError(top, status);
+        }
 
         Debug.Assert(lua_gettop(L) == top, "Installing the helpers left the stack unbalanced.");
         return LuaStatus.Ok;

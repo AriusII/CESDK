@@ -314,8 +314,8 @@ left the function out of its record.
   rethrows its exception on the caller.
 - `ProcessMessages` and `CheckSynchronize` run only on the main thread and throw `InvalidOperationException` elsewhere.
 - `MainThread.IsMainThread` is `false`, and `Invoke` throws, whenever the plugin is disabled.
-- No exception from your plugin reaches Cheat Engine. `OnEnable` and `OnDisable` failures are logged and reported as
-  failed calls.
+- No exception from your plugin reaches Cheat Engine. `OnEnable` failures are logged and reported as failed calls;
+  `OnDisable` failures are logged, then cleanup completes and Cheat Engine records the disabled state.
 
 ## Before you move on
 

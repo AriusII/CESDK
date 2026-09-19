@@ -63,7 +63,9 @@ internal static partial class Ce
     public static partial bool WriteInt32(nuint address, int value);
 
     [LuaGlobal("readInteger")]
-    public static partial bool TryReadInt32(nuint address, out int value);
+    private static partial bool TryReadInt32Raw(nuint address, bool signed, out int value);
+
+    public static bool TryReadInt32(nuint address, out int value) => TryReadInt32Raw(address, true, out value);
 
     [LuaGlobal("getAddressSafe")]
     public static partial bool TryGetAddress(string name, out nuint address);
@@ -87,6 +89,8 @@ internal static partial class Ce
 
 A `[LuaGlobal]` method is the declaration of a `static partial` method with no body. The generator supplies the body in
 a second file, so the `Ce` type and every type around it must be `partial`. Arguments come first and `out` results last.
+`readInteger` defaults to an unsigned result, so the generated raw binding exposes its `signed` argument and the public
+`int` helper always passes `true`.
 
 ### 2. Pick the form that matches the failure
 

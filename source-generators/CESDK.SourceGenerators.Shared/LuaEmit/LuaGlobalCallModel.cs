@@ -34,6 +34,10 @@ namespace CESDK.SourceGenerators.Shared.LuaEmit;
 ///     Throwing form with a <see cref="LuaValueKind.String" /> return: the declaration wrote
 ///     <c>string?</c>.
 /// </param>
+/// <param name="IsExtensionMethod">
+///     Whether the first parameter is the <c>this</c> receiver of an extension method. Generated partial
+///     implementations must repeat that modifier for the declaration to compile.
+/// </param>
 internal sealed record LuaGlobalCallModel(
     string GlobalName,
     string CacheFieldName,
@@ -44,7 +48,8 @@ internal sealed record LuaGlobalCallModel(
     LuaCallForm Form,
     EquatableArray<LuaResultModel> Results,
     LuaValueKind? ReturnKind,
-    bool ReturnIsNullable)
+    bool ReturnIsNullable,
+    bool IsExtensionMethod = false)
 {
     /// <summary>Prefix of the cache field a file emitter declares for a global.</summary>
     public const string CacheFieldPrefix = "s_luaGlobal_";

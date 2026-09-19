@@ -49,15 +49,31 @@ are built and packed together.
        public static string Greet(string name) => $"Hello, {name}!";
    }
    ```
-4. Run `dotnet build -c Release` and keep the whole `bin/Release/net10.0` folder together. The CESDK assemblies sit next
-   to `MyPlugin.dll`.
-5. Apply the roll-forward setting below, then start Cheat Engine, add `MyPlugin.dll` in the plugin settings, and enable
+4. Run `dotnet build -c Release` and keep the whole `bin/Release/net10.0` folder together. The CESDK assemblies and
+   `cesdk-lua-bridge.dll` sit next to `MyPlugin.dll`.
+5. Configure Cheat Engine for .NET 10 as described below, then start it, add `MyPlugin.dll` in the plugin settings, and enable
    it. In the Lua Engine window, run `print(greet("world"))`.
 
 > [!IMPORTANT]
-> Cheat Engine 7.7 asks for the .NET 9 runtime, so a .NET 10 plugin needs one roll-forward setting. Set
-`DOTNET_ROLL_FORWARD=Major` in the shell that launches Cheat Engine, or edit `ce.runtimeconfig.json` in the Cheat Engine
-folder to request `10.0.0`.
+> Cheat Engine 7.7 asks for .NET 9. Before starting it, edit the Cheat Engine folder's `ce.runtimeconfig.json` in an
+> elevated editor to request .NET 10 explicitly:
+>
+> - Set `runtimeOptions.tfm` to `net10.0`.
+> - Set the `version` of every framework request to `10.0.0`: `Microsoft.NETCore.App`,
+>   `Microsoft.WindowsDesktop.App`, and `Microsoft.AspNetCore.App` (whether the file uses `framework` or `frameworks`).
+> - Set `runtimeOptions.rollForward` to `LatestMinor`. If a framework entry has its own `rollForward`, set it to
+>   `LatestMinor` too.
+>
+> With that configuration, Cheat Engine stays on .NET 10 even when .NET 9 or 11 is installed. A shell launch can repeat
+> the same policy, but does not select .NET 10 by itself:
+>
+> ```powershell
+> $env:DOTNET_ROLL_FORWARD = "LatestMinor"
+> .\cheatengine-x86_64.exe
+> ```
+>
+> Keep the existing framework names. This changes Cheat Engine's runtime request only; it does not change installed
+> runtimes or machine-wide environment settings.
 
 The [live plugin guide](https://github.com/ShadowNineX/CESDK/blob/main/tests/CESDK.LivePlugin/README.md#run-it-in-cheat-engine)
 has the full Cheat Engine procedure.
@@ -67,7 +83,8 @@ has the full Cheat Engine procedure.
 `lib/net10.0` holds the six libraries (`Abi`, `Annotations`, `Engine`, `Hosting`, `Lua`, `Lua.Interop`) with their XML
 docs, plus an empty `CESDK.dll`. `analyzers/dotnet/cs` holds `Analyzers`, `Analyzers.CodeFixes`,
 `SourceGenerators.EntryPoint` and `SourceGenerators.LuaBindings`. `build/` and `buildTransitive/` hold `CESDK.props`.
-The `EngineApi` generator is repository-internal and never ships. The package has no NuGet dependencies.
+`runtimes/win-x64/native` holds the prebuilt Lua protection bridge. The `EngineApi` generator is repository-internal
+and never ships. The package has no NuGet dependencies and consumers need no C compiler or xmake.
 
 `CESDK.props` sets `AllowUnsafeBlocks=true`, `EnableDynamicLoading=true` and `CesdkGenerateEntryPoint=true`, each only
 while your project leaves the property empty. Set `CesdkGenerateEntryPoint` to `false` to write `CESDK.CESDK` by hand.
@@ -80,14 +97,15 @@ while your project leaves the property empty. Set `CesdkGenerateEntryPoint` to `
   (`PackageContentsTests`).
 - A plugin project with one `[CheatEnginePlugin]` class gets the generated `CESDK.CESDK.CEPluginInitialize` from the
   package reference alone. `CesdkGenerateEntryPoint=false` switches it off (`EntryPointTests`).
+- The native protection bridge is copied into both build and publish output from the package (`EntryPointTests`).
 - Your own MSBuild values win over the package defaults (`BuildPropertyDefaultsTests` covers `AllowUnsafeBlocks`).
 - A plugin that sets `PlatformTarget=x86` fails the build with `CESDK9101` (target `CesdkRequireX64Platform` in
   `build/CESDK.props`).
 - Every diagnostic has a help link to its own rule page, listed in
   the [rule index](https://github.com/ShadowNineX/CESDK/blob/main/analyzers/docs/README.md) (`DiagnosticCatalogTests`).
-- An exception from `OnEnable` or `OnDisable` is logged and reported to Cheat Engine as a failed call. It never
-  propagates into Cheat Engine (`EnablePluginTests` and `DisablePluginTests`, which run against Cheat Engine's own Lua
-  DLL).
+- An exception from `OnEnable` is logged and reported to Cheat Engine as a failed call. An `OnDisable` exception is
+  logged, cleanup still completes, and Cheat Engine receives success to record the disabled state. Neither propagates
+  into Cheat Engine (`EnablePluginTests` and `DisablePluginTests`, which run against Cheat Engine's own Lua DLL).
 
 ## Requirements
 

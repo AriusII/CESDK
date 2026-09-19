@@ -27,6 +27,7 @@ public sealed class PackagedUmbrellaFixture : IAsyncLifetime
     private static readonly TimeSpan PackTimeout = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan RestoreTimeout = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan BuildTimeout = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan PublishTimeout = TimeSpan.FromMinutes(2);
 
     private DirectoryInfo? _tempRoot;
 
@@ -51,6 +52,12 @@ public sealed class PackagedUmbrellaFixture : IAsyncLifetime
 
     /// <summary>Whether that type declares a two-parameter <c>CEPluginInitialize</c>.</summary>
     public bool DefaultEntryPointMethodExists { get; private set; }
+
+    /// <summary>Path of the native bridge copied into the default consumer's build output.</summary>
+    public string DefaultNativeBridgePath { get; private set; } = "";
+
+    /// <summary>Path of the native bridge copied into the default consumer's publish output.</summary>
+    public string DefaultPublishedNativeBridgePath { get; private set; } = "";
 
     /// <summary>
     ///     <c>AllowUnsafeBlocks</c>, <c>EnableDynamicLoading</c>, <c>CesdkGenerateEntryPoint</c> for the default
@@ -90,6 +97,14 @@ public sealed class PackagedUmbrellaFixture : IAsyncLifetime
             .ConfigureAwait(false);
         (DefaultEntryPointTypeExists, DefaultEntryPointMethodExists) =
             EntryPointProbe.Probe(defaultConsumer.AssemblyPath);
+        DefaultNativeBridgePath = defaultConsumer.NativeBridgePath;
+
+        var publishDirectory = Path.Combine(_tempRoot.FullName, "published-default");
+        var publishResult = await defaultConsumer.PublishAsync(PublishTimeout, publishDirectory).ConfigureAwait(false);
+        if (publishResult.ExitCode != 0)
+            throw new InvalidOperationException(
+                $"'dotnet publish' failed for '{defaultConsumer.ProjectPath}' (exit {publishResult.ExitCode}):{Environment.NewLine}{publishResult.CombinedOutput}");
+        DefaultPublishedNativeBridgePath = Path.Combine(publishDirectory, "cesdk-lua-bridge.dll");
 
         var explicitFalseConsumer = ThrowawayConsumer.Create(
             _tempRoot.FullName, "ExplicitUnsafeFalseConsumer", PackageVersion, feedDirectory,

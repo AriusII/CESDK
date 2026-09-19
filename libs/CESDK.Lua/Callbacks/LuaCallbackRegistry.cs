@@ -13,7 +13,7 @@ internal static class LuaCallbackRegistry
 {
     private static LuaCallback? s_head;
 
-    /// <summary>Serializes list changes and every release: Lua calls made under it never run Lua code, so it cannot re-enter.</summary>
+    /// <summary>Serializes callback list changes and handle release.</summary>
     internal static Lock Gate { get; } = new();
 
     /// <summary>Number of live callbacks; for tests and diagnostics.</summary>

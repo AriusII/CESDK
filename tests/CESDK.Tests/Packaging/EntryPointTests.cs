@@ -1,4 +1,5 @@
 using CESDK.Tests.Infrastructure;
+using System.Runtime.InteropServices;
 
 namespace CESDK.Tests.Packaging;
 
@@ -12,6 +13,9 @@ namespace CESDK.Tests.Packaging;
 [Collection(PackagedUmbrellaSuite.Name)]
 public sealed class EntryPointTests(PackagedUmbrellaFixture fixture)
 {
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate uint BridgeVersion();
+
     [Fact]
     public void Default_consumer_gets_the_generated_entry_point_type()
     {
@@ -31,5 +35,34 @@ public sealed class EntryPointTests(PackagedUmbrellaFixture fixture)
     {
         Assert.False(fixture.EntryPointOffTypeExists,
             "CESDK.CESDK was generated although the consumer set CesdkGenerateEntryPoint=false.");
+    }
+
+    [Fact]
+    public void Default_consumer_gets_a_loadable_native_bridge()
+    {
+        Assert.True(File.Exists(fixture.DefaultNativeBridgePath),
+            $"The bridge was not copied to '{fixture.DefaultNativeBridgePath}'.");
+
+        var module = NativeLibrary.Load(fixture.DefaultNativeBridgePath);
+        try
+        {
+            Assert.True(NativeLibrary.TryGetExport(module, "cesdk_lua_protected", out _));
+            var versionAddress = NativeLibrary.GetExport(module, "cesdk_lua_bridge_abi_version");
+            var version = Marshal.GetDelegateForFunctionPointer<BridgeVersion>(versionAddress);
+            Assert.Equal(1u, version());
+            var fingerprintAddress = NativeLibrary.GetExport(module, "cesdk_lua_bridge_source_fingerprint");
+            Assert.False(string.IsNullOrWhiteSpace(Marshal.PtrToStringAnsi(fingerprintAddress)));
+        }
+        finally
+        {
+            NativeLibrary.Free(module);
+        }
+    }
+
+    [Fact]
+    public void Published_consumer_keeps_the_native_bridge()
+    {
+        Assert.True(File.Exists(fixture.DefaultPublishedNativeBridgePath),
+            $"The bridge was not published to '{fixture.DefaultPublishedNativeBridgePath}'.");
     }
 }

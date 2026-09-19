@@ -24,15 +24,14 @@ namespace CESDK.Lua.State;
 ///     </para>
 ///     <para>
 ///         <b>Three families of members.</b>
-///         <i>Raw</i> members (stack, type tests, pushes, reads, <c>Raw*</c> table access) map to one C API call each and
-///         never run Lua code. Those that allocate inside Lua say "allocates" in their documentation: an allocation can
-///         still
-///         raise on memory exhaustion or through a failing <c>__gc</c> finalizer, which this layer cannot intercept.
+///         <i>Raw</i> members (stack, type tests, scalar pushes, reads and nonallocating table access) map to one C API
+///         call each and never run Lua code. Allocating operations use the tiny native protection bridge, which puts both
+///         the operation and <c>lua_pcallk</c> below the managed stack before Lua can <c>longjmp</c>.
 ///         <i>Protected</i> members (<c>Try*</c> returning <see cref="LuaStatus" />) cover everything that can run a
 ///         metamethod or raise; they always go through <c>lua_pcallk</c> and report failure as a status with the error
 ///         value
 ///         on the stack. There is deliberately no unprotected <c>GetField</c>, <c>SetField</c> or <c>Call</c>.
-///         <i>Reference</i> members create and push <see cref="References.LuaRef" /> registry handles.
+///         <i>Reference</i> members create and push <see cref="References.LuaRef" /> handles in an SDK-private table.
 ///     </para>
 ///     <para>
 ///         <b>Indices</b> follow the C API: positive from the bottom, negative from the top, pseudo-indices for the

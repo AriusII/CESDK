@@ -77,6 +77,13 @@ jobs:
         if: env.SONAR_ENABLED == 'true'
         uses: ./.github/actions/setup-dotnet
 
+      - name: Use CI-built native bridge
+        if: env.SONAR_ENABLED == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lua-protection-bridge
+          path: native/cesdk-lua-bridge/runtimes/win-x64/native
+
       - name: Download coverage
         if: env.SONAR_ENABLED == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

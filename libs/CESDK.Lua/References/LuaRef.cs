@@ -9,7 +9,7 @@ using CESDK.Lua.State;
 namespace CESDK.Lua.References;
 
 /// <summary>
-///     A reference to a Lua value held in the registry (<c>luaL_ref</c>), stamped with the <see cref="LuaRuntime.Epoch" />
+///     A reference to a Lua value held in an SDK-private registry table, stamped with the <see cref="LuaRuntime.Epoch" />
 ///     it was created in. The way this SDK keeps a Lua value alive and reachable across calls without leaving it on the
 ///     stack: cached global functions, host objects owned by managed code, bound method closures.
 /// </summary>
@@ -33,7 +33,7 @@ namespace CESDK.Lua.References;
 ///     <para>
 ///         <b>Representation.</b> Slot number and epoch are packed in one 64-bit field written atomically, so a reader on
 ///         another thread never sees a slot from one epoch paired with the stamp of another. Unresolved and released
-///         references hold <c>LUA_NOREF</c>. Pushing costs one <c>lua_rawgeti</c>; creating one allocates this object and
+///         references hold <c>LUA_NOREF</c>. Pushing and releasing use the same gate; creating one allocates this object and
 ///         a
 ///         registry slot, which is why references are created once and reused, never per call.
 ///     </para>
@@ -61,7 +61,7 @@ public sealed class LuaRef : IDisposable
     }
 
     /// <summary>
-    ///     Gets the registry slot, or <c>LUA_NOREF</c> (-2) when unresolved or released. <c>LUA_REFNIL</c> (-1) is a
+    ///     Gets the slot in the SDK's private reference table, or <c>LUA_NOREF</c> (-2) when unresolved or released. <c>LUA_REFNIL</c> (-1) is a
     ///     valid reference to <c>nil</c>.
     /// </summary>
     public int Reference => Unpack(Volatile.Read(ref _packed), out _);
@@ -116,7 +116,10 @@ public sealed class LuaRef : IDisposable
     /// </summary>
     internal void Rebind(int reference, int epoch)
     {
-        Volatile.Write(ref _packed, Pack(reference, epoch));
+        lock (LuaReferences.Gate)
+        {
+            Volatile.Write(ref _packed, Pack(reference, epoch));
+        }
     }
 
     /// <summary>
@@ -126,10 +129,13 @@ public sealed class LuaRef : IDisposable
     /// <param name="state">A state of the Lua universe the reference was created in; the calling thread's state.</param>
     public unsafe void Release(LuaState state)
     {
-        var packed = Interlocked.Exchange(ref _packed, Pack(NoReference, 0));
-        var reference = Unpack(packed, out var epoch);
-        if (reference != NoReference && epoch == LuaRuntime.Epoch && !state.IsNull)
-            LuaApi.luaL_unref(state.Pointer, LuaApi.LUA_REGISTRYINDEX, reference);
+        lock (LuaReferences.Gate)
+        {
+            var packed = Interlocked.Exchange(ref _packed, Pack(NoReference, 0));
+            var reference = Unpack(packed, out var epoch);
+            if (reference != NoReference && epoch == LuaRuntime.Epoch && !state.IsNull)
+                LuaReferences.Release(state, reference);
+        }
     }
 
     /// <summary><c>LuaRef(slot, epoch N)</c>, or <c>LuaRef(unresolved)</c>.</summary>

@@ -22,7 +22,13 @@ public sealed class MemoryScalarsEndToEndTests(RoslynFixture roslyn) : IClassFix
     private static ReadOnlySpan<byte> StandIns => """
                                                   local mem32 = {}
                                                   local mem64 = {}
-                                                  function readInteger(address) return mem32[address] end
+                                                  -- Cheat Engine returns unsigned 32-bit values unless its optional signed flag is true.
+                                                  -- Preserve that contract here so the generated binding must supply the flag.
+                                                  function readInteger(address, signed)
+                                                      local value = mem32[address]
+                                                      if value == nil or signed then return value end
+                                                      return value < 0 and value + 4294967296 or value
+                                                  end
                                                   function writeInteger(address, value) mem32[address] = value; return true end
                                                   function readQword(address) return mem64[address] end
                                                   function writeQword(address, value) mem64[address] = value; return true end
@@ -31,7 +37,7 @@ public sealed class MemoryScalarsEndToEndTests(RoslynFixture roslyn) : IClassFix
                                                   """u8;
 
     [Fact]
-    public void Write_then_read_round_trips_a_32_bit_value_and_a_missing_address_reads_as_false()
+    public void Write_then_read_round_trips_signed_32_bit_boundaries_and_a_missing_address_reads_as_false()
     {
         LuaTest.RequireNativeLua();
         using NativeLuaState state = new();
@@ -46,9 +52,12 @@ public sealed class MemoryScalarsEndToEndTests(RoslynFixture roslyn) : IClassFix
         Assert.True(tryRead(0x1000, out var value));
         Assert.Equal(42, value);
 
-        Assert.True(write(0x1000, -7));
-        Assert.True(tryRead(0x1000, out var negative));
-        Assert.Equal(-7, negative);
+        foreach (var expected in new[] { int.MinValue, -7, -1 })
+        {
+            Assert.True(write(0x1000, expected));
+            Assert.True(tryRead(0x1000, out var actual));
+            Assert.Equal(expected, actual);
+        }
 
         Assert.False(tryRead(0x2000, out var missing));
         Assert.Equal(0, missing);

@@ -15,6 +15,7 @@ internal static class SpecSources
                                  method: TryReadInt32
                                  form: try
                                  arg: address:address
+                                 fixed: boolean:true
                                  result: value:int32
                                  doc: Reads a 32-bit integer from the target process at the given address.
 
@@ -98,6 +99,7 @@ internal static class SpecSources
                                    method: TryReadInt32
                                    form: try
                                    arg: address:address
+                                   fixed: boolean:true
                                    result: value:int32
                                    doc: Reads a 32-bit integer from the target process at the given address.
 

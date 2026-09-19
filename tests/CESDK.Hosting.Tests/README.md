@@ -39,8 +39,9 @@ and claim no thread hop. The end-to-end check inside Cheat Engine is [
 ## Promise
 
 - The bootstrap writes exactly 36 bytes, at an aligned and an odd address. A refused bootstrap writes nothing.
-- An exception from a factory name getter makes the bootstrap return 0. An exception from a plugin constructor,
-  `OnEnable` or `OnDisable` makes the callback return `FALSE`. Each one logs an error and none escapes.
+- An exception from a factory name getter makes the bootstrap return 0. An exception from a plugin constructor or
+  `OnEnable` makes the callback return `FALSE`. `OnDisable` failures are logged, cleanup completes, and its callback
+  returns `TRUE` so Cheat Engine records the resulting disabled state. None escapes.
 - A nested `EnablePlugin` or `DisablePlugin` call from inside `OnEnable` or `OnDisable` returns `FALSE`, and the outer
   transition stands.
 - `DisablePlugin` detaches `LuaRuntime`, withdraws `PluginContext` and releases Lua callbacks the plugin forgot.

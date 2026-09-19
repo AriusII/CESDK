@@ -25,4 +25,25 @@
     <Error Code="CESDK9101"
            Text="$(MSBuildProjectName) targets PlatformTarget=x86. Cheat Engine hosts plugins in an x64 process only: set &lt;PlatformTarget&gt;x64&lt;/PlatformTarget&gt; (or &lt;Platforms&gt;x64&lt;/Platforms&gt;) instead."/>
   </Target>
+
+  <PropertyGroup>
+    <_CesdkLuaBridgePath>$(MSBuildThisFileDirectory)..\runtimes\win-x64\native\cesdk-lua-bridge.dll</_CesdkLuaBridgePath>
+  </PropertyGroup>
+
+  <!-- The package carries the prebuilt bridge. Copying it here keeps ordinary plugin builds compiler-free. -->
+  <Target Name="CesdkCopyLuaProtectionBridge" AfterTargets="Build"
+          Condition="$([MSBuild]::IsOSPlatform('Windows')) and Exists('$(_CesdkLuaBridgePath)')">
+    <Copy SourceFiles="$(_CesdkLuaBridgePath)"
+          DestinationFiles="$(TargetDir)cesdk-lua-bridge.dll"
+          SkipUnchangedFiles="true"/>
+  </Target>
+
+  <Target Name="CesdkIncludeLuaProtectionBridgeInPublish" BeforeTargets="ComputeFilesToPublish"
+          Condition="$([MSBuild]::IsOSPlatform('Windows')) and Exists('$(_CesdkLuaBridgePath)')">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(_CesdkLuaBridgePath)"
+                             RelativePath="cesdk-lua-bridge.dll"
+                             CopyToPublishDirectory="PreserveNewest"/>
+    </ItemGroup>
+  </Target>
 </Project>

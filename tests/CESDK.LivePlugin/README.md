@@ -50,18 +50,19 @@ Prerequisites:
 |--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Platform     | Windows x64 with Cheat Engine 7.7 and Sysinternals [DebugView](https://learn.microsoft.com/sysinternals/downloads/debugview)                                                                                                                                                                                   |
 | SDK          | .NET SDK 10.0.401 or later, the version `global.json` pins                                                                                                                                                                                                                                                     |
-| Runtimes     | The x64 .NET 10 runtimes: `dotnet --list-runtimes` lists 10.x of `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App` and `Microsoft.AspNetCore.App`. A missing runtime stops Cheat Engine from starting the plugin even with the roll-forward setting.                                                     |
-| Roll-forward | Cheat Engine 7.7 requests .NET 9 in `ce.runtimeconfig.json` (`net9.0`, `9.0.0`, `latestMinor`). A .NET 10 plugin needs one setting. Set `DOTNET_ROLL_FORWARD=Major` in the shell that starts Cheat Engine. Or edit that file in an elevated editor: `tfm` to `net10.0`, every framework `version` to `10.0.0`. |
+| Runtimes     | The x64 .NET 10 runtimes: `dotnet --list-runtimes` lists 10.x of `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App` and `Microsoft.AspNetCore.App`. A missing runtime stops Cheat Engine from starting the plugin even with the runtime configuration change.                                                     |
+| Runtime request | Cheat Engine 7.7 requests .NET 9 in `ce.runtimeconfig.json` (`net9.0`, `9.0.0`, `latestMinor`). To require .NET 10, set `runtimeOptions.tfm` to `net10.0`, the `version` of every framework request (`framework` or `frameworks`) to `10.0.0` for `Microsoft.NETCore.App`, `Microsoft.WindowsDesktop.App`, and `Microsoft.AspNetCore.App`, and `runtimeOptions.rollForward` to `LatestMinor`. Set any framework-level `rollForward` to `LatestMinor` too. This stays on .NET 10 even with .NET 9 or 11 installed. |
 
 1. Build the plugin with `dotnet build tests/CESDK.LivePlugin/CESDK.LivePlugin.csproj -c Release`. The output folder is
-   `artifacts/bin/CESDK.LivePlugin/release/`. Keep the whole folder together: the libraries sit beside
-   `CESDK.LivePlugin.dll`.
+   `artifacts/bin/CESDK.LivePlugin/release/`. Keep the whole folder together: the libraries and
+   `cesdk-lua-bridge.dll` sit beside `CESDK.LivePlugin.dll`.
 2. Start DebugView, turn on Capture > Capture Global Win32 and add a filter for `CESDK`.
-3. Start Cheat Engine from a shell that carries the setting. Skip the first line if you edited the file.
+3. Start Cheat Engine after applying the runtime configuration above. To repeat its .NET 10 `LatestMinor` policy from a
+   shell in the Cheat Engine folder, run:
 
    ```powershell
-   $env:DOTNET_ROLL_FORWARD = "Major"
-   & "C:\Program Files\Cheat Engine\cheatengine-x86_64.exe"
+   $env:DOTNET_ROLL_FORWARD = "LatestMinor"
+   .\cheatengine-x86_64.exe
    ```
 
 4. Open Edit > Settings > Plugins, choose Add new, select `CESDK.LivePlugin.dll` and tick it. You should see
@@ -79,7 +80,7 @@ Prerequisites:
 | `CESDK Live Plugin: readInteger(00400000) -> ok=<True or False>, value=<n>.` | The address is a placeholder, and `ok=False` means the read failed. To see a value, set a readable address of an attached process in `CesdkLivePlugin.cs`.                                                                                                                                                                                                            |
 | `Plugin <id> enabled (epoch <n>).`                                           | The host confirms the enable.                                                                                                                                                                                                                                                                                                                                         |
 
-If DebugView stays empty, confirm that capture is on and the plugin is ticked, that Cheat Engine started with the
-roll-forward setting in place, and that `dotnet --list-runtimes` lists the required .NET 10 runtimes. A
+If DebugView stays empty, confirm that capture is on and the plugin is ticked, that `ce.runtimeconfig.json` requests
+.NET 10 as described above, and that `dotnet --list-runtimes` lists the required .NET 10 runtimes. A
 `[CESDK.Hosting] Error:` entry names the step that failed, because the host logs every failed enable. If Cheat Engine
 refuses the DLL, check that `CESDK.EntryPoint.g.cs` exists under `artifacts/obj/CESDK.LivePlugin/generated/Release/`.

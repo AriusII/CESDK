@@ -47,10 +47,9 @@ public sealed class LuaGlobalOutputTests(RoslynFixture roslyn) : IClassFixture<R
             "public static partial bool TryReadString(nuint address, int maxLength, global::System.Span<byte> destination, out int written)",
             text,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "bool __ok = __L.TryCopyUtf8(-1, destination, out written);\n            __L.SetTop(__top);\n            return __ok;",
-            text,
+        Assert.Contains("bool __ok = __L.TryCopyUtf8(-1, destination, out written);\n                return __ok;", text,
             StringComparison.Ordinal);
+        Assert.Contains("finally\n            {\n                __L.SetTop(__top);", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -71,7 +70,7 @@ public sealed class LuaGlobalOutputTests(RoslynFixture roslyn) : IClassFixture<R
     }
 
     [Fact]
-    public void Generator_void_throwing_form_keeps_no_result_and_needs_no_restore()
+    public void Generator_void_throwing_form_keeps_no_result_and_restores_the_stack_in_finally()
     {
         var run = roslyn.Run(BindingSources.GlobalSuite);
 
@@ -79,7 +78,7 @@ public sealed class LuaGlobalOutputTests(RoslynFixture roslyn) : IClassFixture<R
         var body = Section(text, "public static partial void Beep()", "\n        }\n");
         Assert.Contains("global::CESDK.Lua.Calls.LuaStatus __status = __L.TryCall(0, 0);", body,
             StringComparison.Ordinal);
-        Assert.DoesNotContain("SetTop", body, StringComparison.Ordinal);
+        Assert.Contains("finally\n            {\n                __L.SetTop(__top);", body, StringComparison.Ordinal);
         Assert.DoesNotContain("return", body, StringComparison.Ordinal);
     }
 
@@ -106,16 +105,17 @@ public sealed class LuaGlobalOutputTests(RoslynFixture roslyn) : IClassFixture<R
             "\n        }\n");
         Assert.Contains("__L.TryCall(2, 2)", body, StringComparison.Ordinal);
         Assert.Contains(
-            "remainder = default;\n                return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out quotient);",
+            "remainder = default;\n                    return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out quotient);",
             body, StringComparison.Ordinal);
         Assert.Contains("if (!global::CESDK.Lua.Marshalling.Int64Marshaller.TryRead(__L, -2, out quotient))", body,
             StringComparison.Ordinal);
         Assert.Contains("if (!global::CESDK.Lua.Marshalling.Int64Marshaller.TryRead(__L, -1, out remainder))", body,
             StringComparison.Ordinal);
         Assert.Contains(
-            "quotient = default;\n                return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out remainder);",
+            "quotient = default;\n                    return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out remainder);",
             body, StringComparison.Ordinal);
-        Assert.EndsWith("__L.SetTop(__top);\n            return true;", body, StringComparison.Ordinal);
+        Assert.Contains("return true;\n            }\n            catch (global::CESDK.Lua.Calls.LuaException)", body,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -168,10 +168,10 @@ public sealed class LuaGlobalOutputTests(RoslynFixture roslyn) : IClassFixture<R
         run.AssertCompilesClean();
         var text = run.SingleGeneratedText;
         Assert.Contains(
-            "if (!__L.TryEnsureStack(17))\n            {\n                return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out sum);",
+            "if (!__L.TryEnsureStack(17))\n                {\n                    return global::CESDK.Lua.CompilerServices.LuaCallSupport.Fail(__L, __top, out sum);",
             text, StringComparison.Ordinal);
         Assert.Contains(
-            "if (!__L.TryEnsureStack(17))\n            {\n                throw new global::CESDK.Lua.Calls.LuaException(\"The Lua stack could not grow by 17 slots to call 'sum16'.\");",
+            "if (!__L.TryEnsureStack(17))\n                {\n                    throw new global::CESDK.Lua.Calls.LuaException(\"The Lua stack could not grow by 17 slots to call 'sum16'.\");",
             text, StringComparison.Ordinal);
         Assert.Contains("__L.TryCall(16, 1)", text, StringComparison.Ordinal);
     }

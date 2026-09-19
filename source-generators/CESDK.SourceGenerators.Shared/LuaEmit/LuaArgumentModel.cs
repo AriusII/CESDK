@@ -17,4 +17,14 @@ namespace CESDK.SourceGenerators.Shared.LuaEmit;
 ///     such a parameter is effectively scoped either way. Meaningless, and always <see langword="false" />, for every
 ///     other kind: <c>scoped</c> on a by-value parameter of a non-<c>ref struct</c> type does not compile.
 /// </param>
-internal sealed record LuaArgumentModel(string Name, LuaValueKind Kind, bool IsNullable, bool IsScoped = false);
+/// <param name="FixedValue">
+///     A C# expression pushed to Lua without appearing in the managed wrapper signature. Engine API specs use this for
+///     host-required flags such as <c>readInteger</c>'s signed-result argument; binding declarations always leave it
+///     <see langword="null" />.
+/// </param>
+internal sealed record LuaArgumentModel(string Name, LuaValueKind Kind, bool IsNullable, bool IsScoped = false,
+    string? FixedValue = null)
+{
+    /// <summary>Whether this value is pushed directly instead of being supplied by a wrapper parameter.</summary>
+    public bool IsFixed => FixedValue is not null;
+}

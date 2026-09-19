@@ -55,6 +55,7 @@ CRLF line endings are tolerated.
 | `form`      | entry  | 1                  | `try` returns `bool` and writes `out` results. `throwing` returns the value, or `void`, and raises `LuaException` when the Lua call fails. |
 | `doc`       | entry  | 1                  | One line of original English, emitted as the XML `<summary>`. Never copy Cheat Engine documentation.                                       |
 | `arg`       | entry  | 0 or more          | `name:kind`, one pushed argument, in order.                                                                                                |
+| `fixed`     | entry  | 0 or more          | `boolean:true` or `boolean:false`, one host-required Lua argument omitted from the C# signature, after all `arg` values.                |
 | `result`    | entry  | `try`: 1 or more   | `name:kind`, one `out` result, in read order. Not allowed in a `throwing` entry.                                                           |
 | `return`    | entry  | `throwing`: 0 or 1 | The kind of the returned value. Omit it for `void`. Not allowed in a `try` entry.                                                          |
 
@@ -71,6 +72,7 @@ global: readInteger
 method: TryReadInt32
 form: try
 arg: address:address
+fixed: boolean:true
 result: value:int32
 doc: Reads a 32-bit integer from the target process.
 ```

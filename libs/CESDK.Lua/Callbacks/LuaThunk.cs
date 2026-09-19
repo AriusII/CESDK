@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using CESDK.Annotations.Lua;
 using CESDK.Lua.Protected;
 using CESDK.Lua.State;
+using CESDK.Lua.Text;
 using static CESDK.Lua.Interop.Api.LuaApi;
 
 namespace CESDK.Lua.Callbacks;
@@ -79,15 +80,19 @@ public static class LuaThunk
     public static unsafe bool TryGetState<TState>(LuaState state, [NotNullWhen(true)] out TState? value)
         where TState : class
     {
-        var upvalue = lua_touserdata(state.Pointer, lua_upvalueindex(1));
-        if (upvalue is null)
+        // Release must not free the handle between reading its address and rooting its target.
+        lock (LuaCallbackRegistry.Gate)
         {
-            value = null;
-            return false;
-        }
+            var upvalue = lua_touserdata(state.Pointer, lua_upvalueindex(1));
+            if (upvalue is null)
+            {
+                value = null;
+                return false;
+            }
 
-        value = GCHandle<object>.FromIntPtr((nint)upvalue).Target as TState;
-        return value is not null;
+            value = GCHandle<object>.FromIntPtr((nint)upvalue).Target as TState;
+            return value is not null;
+        }
     }
 
     /// <summary>
@@ -98,14 +103,23 @@ public static class LuaThunk
     /// <param name="message">The error message, UTF-8.</param>
     /// <returns>2.</returns>
     /// <remarks>
-    ///     The message push allocates inside Lua and can therefore raise on memory exhaustion like any string push; a
-    ///     thunk has <see cref="LuaState.MinimumFreeSlots" /> free slots, of which this uses two.
+    ///     The message allocation runs through the native protection bridge. If Lua cannot allocate the message, the
+    ///     protected Lua error value becomes the second result. A bridge failure falls back to <c>nil</c>, so this method
+    ///     never lets a Lua <c>longjmp</c> or managed exception escape the thunk.
     /// </remarks>
     [LuaStackEffect(FailureResultCount)]
     public static unsafe int Fail(LuaState state, ReadOnlySpan<byte> message)
     {
         LuaHelpers.PushSentinel(state.Pointer);
-        state.PushString(message);
+        try
+        {
+            _ = state.TryPushString(message);
+        }
+        catch (Exception)
+        {
+            state.PushNil();
+        }
+
         return FailureResultCount;
     }
 
@@ -119,9 +133,18 @@ public static class LuaThunk
     [LuaStackEffect(FailureResultCount)]
     public static unsafe int Fail(LuaState state, ReadOnlySpan<char> message)
     {
-        LuaHelpers.PushSentinel(state.Pointer);
-        state.PushString(message);
-        return FailureResultCount;
+        try
+        {
+            Span<byte> scratch = stackalloc byte[Utf8Scratch.StackBufferSize];
+            using var utf8 = Utf8Scratch.Encode(message, scratch);
+            return Fail(state, utf8.Bytes);
+        }
+        catch (Exception)
+        {
+            LuaHelpers.PushSentinel(state.Pointer);
+            state.PushNil();
+            return FailureResultCount;
+        }
     }
 
     /// <summary>
