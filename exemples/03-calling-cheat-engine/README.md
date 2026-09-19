@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A small `Ce` class that binds the Cheat Engine functions a trainer needs |
-| **You learn** | `[LuaGlobal]`, the Try and throwing forms, overloads, copy out strings and the three ways a call fails |
-| **You need** | The plugin from [02 · Lua functions](../02-lua-functions/README.md) |
+|                            |                                                                                                                                                         |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A small `Ce` class that binds the Cheat Engine functions a trainer needs                                                                                |
+| **You learn**              | `[LuaGlobal]`, the Try and throwing forms, overloads, copy out strings and the three ways a call fails                                                  |
+| **You need**               | The plugin from [02 · Lua functions](../02-lua-functions/README.md)                                                                                     |
 | **Cheat Engine functions** | `getOpenedProcessID`, `getCEVersion`, `showMessage`, `getAddress`, `getAddressSafe`, `readInteger`, `writeInteger`, `getNameFromAddress`, `openProcess` |
 
 ## Objective
@@ -93,12 +93,12 @@ a second file, so the `Ce` type and every type around it must be `partial`. Argu
 A call can fail in three ways: the global does not exist, the Lua call raises an error, or the result is `nil` or has
 the wrong kind. The form of your method decides what you see.
 
-| Form | Shape | On failure |
-|---|---|---|
-| Try | Returns `bool` and ends with `out` results | Returns `false` and leaves the results at their defaults |
-| Throwing | Returns `void` or one value | Throws `LuaException` |
-| Boolean throwing | Returns `bool` with no `out` results, like `WriteInt32` | Reads the Lua boolean, and throws `LuaException` on failure |
-| Copy out | Ends with `Span<byte> destination, out int written` | Returns `false` on failure, and also when the buffer is too small |
+| Form             | Shape                                                   | On failure                                                        |
+|------------------|---------------------------------------------------------|-------------------------------------------------------------------|
+| Try              | Returns `bool` and ends with `out` results              | Returns `false` and leaves the results at their defaults          |
+| Throwing         | Returns `void` or one value                             | Throws `LuaException`                                             |
+| Boolean throwing | Returns `bool` with no `out` results, like `WriteInt32` | Reads the Lua boolean, and throws `LuaException` on failure       |
+| Copy out         | Ends with `Span<byte> destination, out int written`     | Returns `false` on failure, and also when the buffer is too small |
 
 ```mermaid
 flowchart LR
@@ -155,12 +155,12 @@ internal static partial class Trainer
 
 ## What the failures look like
 
-| Failure | Try form | Throwing form, `LuaException.Message` |
-|---|---|---|
-| The global is not defined | `false` | `The Lua global 'getCEVersion' is undefined or is not a function.` |
-| The Lua call raises | `false` | The message Lua raised, such as `symbol not found: nope` |
-| The result is `nil` | `false` | `The Lua global 'probe_nil' returned a nil value, not an integer.` |
-| The result has the wrong kind | `false` | `The Lua global 'probe_wrong' returned a string value, not an integer.` |
+| Failure                       | Try form | Throwing form, `LuaException.Message`                                   |
+|-------------------------------|----------|-------------------------------------------------------------------------|
+| The global is not defined     | `false`  | `The Lua global 'getCEVersion' is undefined or is not a function.`      |
+| The Lua call raises           | `false`  | The message Lua raised, such as `symbol not found: nope`                |
+| The result is `nil`           | `false`  | `The Lua global 'probe_nil' returned a nil value, not an integer.`      |
+| The result has the wrong kind | `false`  | `The Lua global 'probe_wrong' returned a string value, not an integer.` |
 
 In every case the Lua stack returns to the height it had before the call.
 

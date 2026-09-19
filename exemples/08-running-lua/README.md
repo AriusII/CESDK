@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A script runner, a hand written call, a kept function and a callback that carries state |
-| **You learn** | `LuaFrame`, `TryExecute`, reading results and tables, marshallers, `LuaRef`, `LuaCallback` |
-| **You need** | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md) |
-| **Cheat Engine functions** | `getOpenedProcessID`, `getNameFromAddress`, `debug_continueFromBreakpoint` |
+|                            |                                                                                            |
+|----------------------------|--------------------------------------------------------------------------------------------|
+| **You build**              | A script runner, a hand written call, a kept function and a callback that carries state    |
+| **You learn**              | `LuaFrame`, `TryExecute`, reading results and tables, marshallers, `LuaRef`, `LuaCallback` |
+| **You need**               | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)        |
+| **Cheat Engine functions** | `getOpenedProcessID`, `getNameFromAddress`, `debug_continueFromBreakpoint`                 |
 
 ## Objective
 
@@ -32,14 +32,14 @@ a `LuaStatus` instead of raising, and gives you `LuaFrame` so that no exit path 
 
 ## Which tool for which job
 
-| Job | Tool | Guide |
-|---|---|---|
-| Export a C# method to Lua | `[LuaFunction]` | [02](../02-lua-functions/README.md) |
-| Call a Cheat Engine function with scalar or text arguments and results | `[LuaGlobal]` | [03](../03-calling-cheat-engine/README.md) |
-| Run a script, read several results, read a table | `LuaState` and `TryExecute` | This guide |
-| Call a function whose name is known only at run time, or that takes an enum or a table | `LuaState`, `TryGetGlobal`, `TryCall` | This guide |
-| Work with a Cheat Engine object | `CEObject` and `Owned<T>` | [05](../05-aob-scans/README.md) to [07](../07-address-list/README.md) |
-| Pass a C# function that carries state to Cheat Engine | `LuaCallback` | This guide |
+| Job                                                                                    | Tool                                  | Guide                                                                 |
+|----------------------------------------------------------------------------------------|---------------------------------------|-----------------------------------------------------------------------|
+| Export a C# method to Lua                                                              | `[LuaFunction]`                       | [02](../02-lua-functions/README.md)                                   |
+| Call a Cheat Engine function with scalar or text arguments and results                 | `[LuaGlobal]`                         | [03](../03-calling-cheat-engine/README.md)                            |
+| Run a script, read several results, read a table                                       | `LuaState` and `TryExecute`           | This guide                                                            |
+| Call a function whose name is known only at run time, or that takes an enum or a table | `LuaState`, `TryGetGlobal`, `TryCall` | This guide                                                            |
+| Work with a Cheat Engine object                                                        | `CEObject` and `Owned<T>`             | [05](../05-aob-scans/README.md) to [07](../07-address-list/README.md) |
+| Pass a C# function that carries state to Cheat Engine                                  | `LuaCallback`                         | This guide                                                            |
 
 ## How it works
 
@@ -53,13 +53,13 @@ using LuaFrame frame = new(L);
 `LuaRuntime.AcquireState()` returns the state of the calling thread. `LuaFrame` remembers the stack height and restores
 it when the block ends, on every exit: an early `return`, an exception or a failed call.
 
-| Rule | Why |
-|---|---|
-| Never store a `LuaState`. Acquire it once per operation | It belongs to one thread, and a stored state goes stale when the plugin is disabled |
-| Open a `LuaFrame` before you push anything | Your code cannot leave a value behind, whatever path it takes |
-| A `Try*` member leaves either its results or exactly one error value | `LuaError.FromStack` reads that value without running Lua code |
-| Raw members (`PushInteger`, `TypeOf`, `TryReadInteger`) never run Lua code | Only the protected `Try*` members can, so only they can fail |
-| Inside a callback, use the state Lua passed to you | `AcquireState` is for code that Lua did not call |
+| Rule                                                                       | Why                                                                                 |
+|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Never store a `LuaState`. Acquire it once per operation                    | It belongs to one thread, and a stored state goes stale when the plugin is disabled |
+| Open a `LuaFrame` before you push anything                                 | Your code cannot leave a value behind, whatever path it takes                       |
+| A `Try*` member leaves either its results or exactly one error value       | `LuaError.FromStack` reads that value without running Lua code                      |
+| Raw members (`PushInteger`, `TypeOf`, `TryReadInteger`) never run Lua code | Only the protected `Try*` members can, so only they can fail                        |
+| Inside a callback, use the state Lua passed to you                         | `AcquireState` is for code that Lua did not call                                    |
 
 ### 2. Run a script
 
@@ -130,11 +130,11 @@ internal static class ScriptRunner
 how many results you want on the stack. The optional chunk name starts with `=` to appear verbatim in messages, so a
 script that fails reports `trainer.lua:1:` instead of a copy of its own source.
 
-| Call | Returns |
-|---|---|
-| `TryRun("x = 1 + 1"u8, out error)` | `true`, `error` is `null` |
-| `TryRun("return +"u8, out error)` | `false`, `trainer.lua:1: unexpected symbol near '+'` |
-| `TryRun("error('boom')"u8, out error)` | `false`, `trainer.lua:1: boom` |
+| Call                                               | Returns                                                            |
+|----------------------------------------------------|--------------------------------------------------------------------|
+| `TryRun("x = 1 + 1"u8, out error)`                 | `true`, `error` is `null`                                          |
+| `TryRun("return +"u8, out error)`                  | `false`, `trainer.lua:1: unexpected symbol near '+'`               |
+| `TryRun("error('boom')"u8, out error)`             | `false`, `trainer.lua:1: boom`                                     |
 | `TryRun("local t = nil; return t.x"u8, out error)` | `false`, `trainer.lua:1: attempt to index a nil value (local 't')` |
 
 ### 3. Read several results, including a table
@@ -217,12 +217,12 @@ internal static class Calls
 `GetOpenedProcessId` shows the pattern in full. It is always the same: push the function, push the arguments,
 `TryCall(argumentCount, resultCount)`, read the results. This one has four exits, and each one is visible in the code:
 
-| Exit | What happened | What you see |
-|---|---|---|
-| `TryGetGlobal` fails | Reading the global raised, for example through a metatable | `LuaException` with the Lua message |
-| `IsFunction` is `false` | The global is `nil` or another value | `InvalidOperationException` from your check |
-| `TryCall` fails | The function raised | `LuaException`, such as `?:2: no process is open` |
-| The read fails | The function returned another kind | `InvalidOperationException` from your check |
+| Exit                    | What happened                                              | What you see                                      |
+|-------------------------|------------------------------------------------------------|---------------------------------------------------|
+| `TryGetGlobal` fails    | Reading the global raised, for example through a metatable | `LuaException` with the Lua message               |
+| `IsFunction` is `false` | The global is `nil` or another value                       | `InvalidOperationException` from your check       |
+| `TryCall` fails         | The function raised                                        | `LuaException`, such as `?:2: no process is open` |
+| The read fails          | The function returned another kind                         | `InvalidOperationException` from your check       |
 
 > [!TIP]
 > For `getOpenedProcessID`, a `[LuaGlobal]` binding is shorter and does the same job. Reach for the hand written form
@@ -230,15 +230,15 @@ internal static class Calls
 
 The marshallers are the typed way to push and read one value. Each one is a `struct` with static `Push` and `TryRead`.
 
-| Marshaller | C# type | Lua value |
-|---|---|---|
-| `Int32Marshaller`, `Int64Marshaller` | `int`, `long` | integer |
-| `SingleMarshaller`, `DoubleMarshaller` | `float`, `double` | number |
-| `BooleanMarshaller` | `bool` | boolean |
-| `StringMarshaller` | `string` | string, copied and decoded |
-| `Utf8Marshaller` | `ReadOnlySpan<byte>` | string, not copied |
-| `AddressMarshaller` | `nuint` | integer, so an address above `long.MaxValue` travels as a negative Lua integer |
-| `EnumMarshaller<TEnum>` | `VariableType`, `ContinueMethod` and the other Cheat Engine enums | integer, the number Cheat Engine's `defines.lua` uses |
+| Marshaller                             | C# type                                                           | Lua value                                                                      |
+|----------------------------------------|-------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `Int32Marshaller`, `Int64Marshaller`   | `int`, `long`                                                     | integer                                                                        |
+| `SingleMarshaller`, `DoubleMarshaller` | `float`, `double`                                                 | number                                                                         |
+| `BooleanMarshaller`                    | `bool`                                                            | boolean                                                                        |
+| `StringMarshaller`                     | `string`                                                          | string, copied and decoded                                                     |
+| `Utf8Marshaller`                       | `ReadOnlySpan<byte>`                                              | string, not copied                                                             |
+| `AddressMarshaller`                    | `nuint`                                                           | integer, so an address above `long.MaxValue` travels as a negative Lua integer |
+| `EnumMarshaller<TEnum>`                | `VariableType`, `ContinueMethod` and the other Cheat Engine enums | integer, the number Cheat Engine's `defines.lua` uses                          |
 
 `TryContinue` shows why the enum marshaller exists: a generated binding cannot take an enum, and
 `ContinueMethod.StepOver` reaches Lua as `2`.
@@ -395,13 +395,13 @@ The thunk is the one piece you write by hand, and it follows four rules:
 
 ## What each layer reports
 
-| Layer | On failure |
-|---|---|
-| `Try*` members of `LuaState` | A `LuaStatus` other than `LuaStatus.Ok`, with one error value on the stack |
-| `LuaError.FromStack(L, status)` | A `LuaError` with the `Status` and the `Message` |
-| `status.ThrowIfFailed(L)` and `LuaException.ThrowFromStack(L, status)` | A `LuaException` whose `Status` and `Message` come from that error |
-| Marshaller `TryRead` and `TryReadInteger` | `false`, and the stack is unchanged |
-| A thunk | `LuaThunk.Fail(...)`, and Lua raises the message at the call site |
+| Layer                                                                  | On failure                                                                 |
+|------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| `Try*` members of `LuaState`                                           | A `LuaStatus` other than `LuaStatus.Ok`, with one error value on the stack |
+| `LuaError.FromStack(L, status)`                                        | A `LuaError` with the `Status` and the `Message`                           |
+| `status.ThrowIfFailed(L)` and `LuaException.ThrowFromStack(L, status)` | A `LuaException` whose `Status` and `Message` come from that error         |
+| Marshaller `TryRead` and `TryReadInteger`                              | `false`, and the stack is unchanged                                        |
+| A thunk                                                                | `LuaThunk.Fail(...)`, and Lua raises the message at the call site          |
 
 `LuaStatus` names the codes `Ok`, `RuntimeError`, `SyntaxError`, `MemoryError`, `MessageHandlerError`,
 `GcMetamethodError`, `FileError` and `Yield`. Compare it with `status.IsOk` in normal code.

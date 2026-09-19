@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A `Player` structure defined in code, a structure lister and an auto guess helper |
-| **You learn** | Creating an object you own, adding elements, handing ownership over with `Release()`, calling a method that takes arguments |
-| **You need** | The object toolkit from [06 · Value scans](../../06-value-scans/README.md): `CEObject` and `Owned<T>` |
+|                            |                                                                                                                                                                     |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A `Player` structure defined in code, a structure lister and an auto guess helper                                                                                   |
+| **You learn**              | Creating an object you own, adding elements, handing ownership over with `Release()`, calling a method that takes arguments                                         |
+| **You need**               | The object toolkit from [06 · Value scans](../../06-value-scans/README.md): `CEObject` and `Owned<T>`                                                               |
 | **Cheat Engine functions** | `createStructure`, `getStructureCount`, `getStructure`, and the structure methods `addElement`, `addToGlobalStructureList`, `autoGuess`, `beginUpdate`, `endUpdate` |
 
 ## Objective
@@ -34,12 +34,12 @@ structure you create is yours until you give it away, and one you did not create
 
 ### 1. Know who owns what
 
-| Object | Comes from | Owner | What you do |
-|---|---|---|---|
-| A new structure | `createStructure(name)` | You, until it joins the global list | Wrap it in `Owned<CEObject>`. Disposing destroys it |
-| A structure in the global list | `addToGlobalStructureList()` | Cheat Engine, which saves it with the table | Call `Release()` on your wrapper and never dispose it |
-| A listed structure | `getStructure(index)` | Cheat Engine | Use the plain `CEObject` and never dispose it |
-| An element | `addElement()` on a structure | The structure | Use the plain `CEObject` and never dispose it |
+| Object                         | Comes from                    | Owner                                       | What you do                                           |
+|--------------------------------|-------------------------------|---------------------------------------------|-------------------------------------------------------|
+| A new structure                | `createStructure(name)`       | You, until it joins the global list         | Wrap it in `Owned<CEObject>`. Disposing destroys it   |
+| A structure in the global list | `addToGlobalStructureList()`  | Cheat Engine, which saves it with the table | Call `Release()` on your wrapper and never dispose it |
+| A listed structure             | `getStructure(index)`         | Cheat Engine                                | Use the plain `CEObject` and never dispose it         |
+| An element                     | `addElement()` on a structure | The structure                               | Use the plain `CEObject` and never dispose it         |
 
 `Owned<T>.Dispose` runs `destroy()` and must run on the main thread. `Release()` returns the handle and forgets it, so a
 later `Dispose` does nothing. A `using` declaration therefore protects every early `return`, and `Release()` is the one

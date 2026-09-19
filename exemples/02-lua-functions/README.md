@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A "game math" plugin whose helpers are callable from any cheat table script |
-| **You learn** | `[LuaFunction]`, the type map, registration, and what Lua sees when a call goes wrong |
-| **You need** | The project from [01 · Your first plugin](../01-first-plugin/README.md) |
-| **Attributes** | `[CheatEnginePlugin]`, `[LuaFunction]` |
+|                |                                                                                       |
+|----------------|---------------------------------------------------------------------------------------|
+| **You build**  | A "game math" plugin whose helpers are callable from any cheat table script           |
+| **You learn**  | `[LuaFunction]`, the type map, registration, and what Lua sees when a call goes wrong |
+| **You need**   | The project from [01 · Your first plugin](../01-first-plugin/README.md)               |
+| **Attributes** | `[CheatEnginePlugin]`, `[LuaFunction]`                                                |
 
 ## Objective
 
@@ -120,24 +120,24 @@ print(my_plugin_checksum("abc"))        -- 96354
 print(my_plugin_kind("print"))          -- function
 ```
 
-| Lua call | Result | Why |
-|---|---|---|
-| `my_plugin_add(2, 3)` | `5` | Two Lua integers in, one integer out |
-| `my_plugin_add(2.0, 3)` | `5` | A float with an integral value converts to an integer |
-| `my_plugin_hp_percent(50, 200)` | `25.0` | A `double` result is a Lua number |
-| `my_plugin_hex(-1)` | `0xFFFFFFFFFFFFFFFF` | `long` keeps its bits, and `X` prints them as unsigned |
-| `my_plugin_find_item(99)` | `nil` | A `null` string result becomes `nil` |
-| `my_plugin_kind("no_such_global")` | `nil` | The leading `LuaState` is the callback's state and is not a Lua argument |
+| Lua call                           | Result               | Why                                                                      |
+|------------------------------------|----------------------|--------------------------------------------------------------------------|
+| `my_plugin_add(2, 3)`              | `5`                  | Two Lua integers in, one integer out                                     |
+| `my_plugin_add(2.0, 3)`            | `5`                  | A float with an integral value converts to an integer                    |
+| `my_plugin_hp_percent(50, 200)`    | `25.0`               | A `double` result is a Lua number                                        |
+| `my_plugin_hex(-1)`                | `0xFFFFFFFFFFFFFFFF` | `long` keeps its bits, and `X` prints them as unsigned                   |
+| `my_plugin_find_item(99)`          | `nil`                | A `null` string result becomes `nil`                                     |
+| `my_plugin_kind("no_such_global")` | `nil`                | The leading `LuaState` is the callback's state and is not a Lua argument |
 
 ## The type map
 
-| Lua type | C# types | Allowed as |
-|---|---|---|
-| integer | `int`, `long`, `nuint` | Parameters and results |
-| number | `float`, `double` | Parameters and results |
-| boolean | `bool` | Parameters and results |
-| string | `string`, `string?` | Parameters and results |
-| string | `ReadOnlySpan<byte>` | Parameters and results of `[LuaFunction]` methods |
+| Lua type | C# types               | Allowed as                                        |
+|----------|------------------------|---------------------------------------------------|
+| integer  | `int`, `long`, `nuint` | Parameters and results                            |
+| number   | `float`, `double`      | Parameters and results                            |
+| boolean  | `bool`                 | Parameters and results                            |
+| string   | `string`, `string?`    | Parameters and results                            |
+| string   | `ReadOnlySpan<byte>`   | Parameters and results of `[LuaFunction]` methods |
 
 > [!TIP]
 > Take text as `ReadOnlySpan<byte>` when the function runs often. The span points at the string Lua already holds, so
@@ -152,13 +152,13 @@ stack with `using LuaFrame frame = new(state);` whenever you push values.
 Lua reports the mistake and keeps running. No exception ever reaches Cheat Engine, and the Lua stack returns to the
 height it had before the call.
 
-| Lua call | What Lua reports |
-|---|---|
-| `my_plugin_add(1)` | `wrong number of arguments to 'my_plugin_add' (2 expected)` |
-| `my_plugin_add("a", 2)` | `bad argument #1 (integer expected, got string)` |
-| `my_plugin_add(1.5, 2)` | `bad argument #1 (integer expected, got number)` |
-| `my_plugin_is_alive(true)` | `bad argument #1 (integer expected, got boolean)` |
-| `my_plugin_divide(10, 0)` | `System.DivideByZeroException: Attempted to divide by zero.` |
+| Lua call                   | What Lua reports                                             |
+|----------------------------|--------------------------------------------------------------|
+| `my_plugin_add(1)`         | `wrong number of arguments to 'my_plugin_add' (2 expected)`  |
+| `my_plugin_add("a", 2)`    | `bad argument #1 (integer expected, got string)`             |
+| `my_plugin_add(1.5, 2)`    | `bad argument #1 (integer expected, got number)`             |
+| `my_plugin_is_alive(true)` | `bad argument #1 (integer expected, got boolean)`            |
+| `my_plugin_divide(10, 0)`  | `System.DivideByZeroException: Attempted to divide by zero.` |
 
 A C# exception becomes an ordinary Lua error, so a script can guard the call with `pcall`:
 
@@ -169,17 +169,18 @@ print(ok, message)   -- false   System.DivideByZeroException: Attempted to divid
 
 ## Naming and shape rules
 
-| Rule | Detail |
-|---|---|
-| Lua name | Starts with an ASCII letter or `_`, continues with letters, digits or `_`, and is not a Lua 5.3 reserved word |
-| Method | `static`, non generic, not `async`, parameters by value, no `params`, no default values |
-| Type | The containing type and every type around it is `partial`, non generic and not `file` local |
-| Duplicates | Two methods of one type with the same Lua name are both skipped, and `CESDK2003` names the clash |
-| Prefix | Give every name a plugin prefix such as `my_plugin_`. Lua globals are shared with every table and plugin |
+| Rule       | Detail                                                                                                        |
+|------------|---------------------------------------------------------------------------------------------------------------|
+| Lua name   | Starts with an ASCII letter or `_`, continues with letters, digits or `_`, and is not a Lua 5.3 reserved word |
+| Method     | `static`, non generic, not `async`, parameters by value, no `params`, no default values                       |
+| Type       | The containing type and every type around it is `partial`, non generic and not `file` local                   |
+| Duplicates | Two methods of one type with the same Lua name are both skipped, and `CESDK2003` names the clash              |
+| Prefix     | Give every name a plugin prefix such as `my_plugin_`. Lua globals are shared with every table and plugin      |
 
 > [!NOTE]
 > A method the generator cannot bind is never silently ignored. The analyzers report it in the editor with a
-> `CESDK2001` to `CESDK2004` diagnostic and a page that explains the fix. See [11 · Diagnostics](../11-diagnostics/README.md).
+> `CESDK2001` to `CESDK2004` diagnostic and a page that explains the fix.
+See [11 · Diagnostics](../11-diagnostics/README.md).
 
 ## Promise
 

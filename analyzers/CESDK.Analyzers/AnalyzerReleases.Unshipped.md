@@ -4,7 +4,7 @@
 ### New Rules
 
  Rule ID   | Category         | Severity | Notes
------------|------------------|----------|----------------------------------------------------------------------------------------------------------------------------
+-----------|------------------|----------|--------------------------------------------------------------------------------------------------------------------------------
  CESDK0001 | CESDK.Plugin     | Error    | CheatEnginePluginAnalyzer, [Documentation](https://github.com/ShadowNineX/CESDK/blob/main/analyzers/docs/CESDK0001.md)
  CESDK0002 | CESDK.Plugin     | Error    | CheatEnginePluginAnalyzer, [Documentation](https://github.com/ShadowNineX/CESDK/blob/main/analyzers/docs/CESDK0002.md)
  CESDK0004 | CESDK.Plugin     | Warning  | CheatEnginePluginAnalyzer, [Documentation](https://github.com/ShadowNineX/CESDK/blob/main/analyzers/docs/CESDK0004.md)

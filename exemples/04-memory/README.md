@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A "Memory Tools" plugin: attach to a game, bump a value, read an entity and follow the player pointer |
-| **You learn** | The `Address` type, `MemoryScalars`, your own typed bindings, and a bounded pointer chain resolver |
-| **You need** | The bindings and registration pattern from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md) |
+|                            |                                                                                                                                                                                                                                                             |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A "Memory Tools" plugin: attach to a game, bump a value, read an entity and follow the player pointer                                                                                                                                                       |
+| **You learn**              | The `Address` type, `MemoryScalars`, your own typed bindings, and a bounded pointer chain resolver                                                                                                                                                          |
+| **You need**               | The bindings and registration pattern from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)                                                                                                                                                |
 | **Cheat Engine functions** | `openProcess`, `getOpenedProcessID`, `getAddress`, `getAddressSafe`, `readInteger`, `writeInteger`, `readQword`, `writeQword`, `readSmallInteger`, `writeSmallInteger`, `readFloat`, `writeFloat`, `readDouble`, `writeDouble`, `readString`, `writeString` |
 
 ## Objective
@@ -141,15 +141,15 @@ internal static class AddressExamples
 }
 ```
 
-| Expression | Result | What it shows |
-|---|---|---|
-| `Address.Parse("0x7FF6A1B20000")` | `00007FF6A1B20000` | Hexadecimal text, `0x` optional. `ToString()` pads to 8 digits when the value fits 32 bits and to 16 otherwise |
-| `module + 0x2A4F10` | `00007FF6A1DC4F10` | Offsets are `long` and wrap like pointer arithmetic |
-| `$"{health:X}"` | `7FF6A1DC4F10` | `X` and `x` give minimal digits, `x8` gives at least eight. Addresses ignore the culture |
-| `new Address(0x1A2B)` | `00001A2B` | The default format is Cheat Engine's own display convention |
-| `Address.FromInt64(-1)` | `FFFFFFFFFFFFFFFF` | Lua carries an address above `long.MaxValue` as a negative integer, and this keeps the bits |
-| `Address.Parse("10")` | `16` | Text is always hexadecimal, so there is no decimal form |
-| `Address.TryParse("12 34", out _)` | `False` | No separators, no sign, no overflow past 64 bits |
+| Expression                         | Result             | What it shows                                                                                                  |
+|------------------------------------|--------------------|----------------------------------------------------------------------------------------------------------------|
+| `Address.Parse("0x7FF6A1B20000")`  | `00007FF6A1B20000` | Hexadecimal text, `0x` optional. `ToString()` pads to 8 digits when the value fits 32 bits and to 16 otherwise |
+| `module + 0x2A4F10`                | `00007FF6A1DC4F10` | Offsets are `long` and wrap like pointer arithmetic                                                            |
+| `$"{health:X}"`                    | `7FF6A1DC4F10`     | `X` and `x` give minimal digits, `x8` gives at least eight. Addresses ignore the culture                       |
+| `new Address(0x1A2B)`              | `00001A2B`         | The default format is Cheat Engine's own display convention                                                    |
+| `Address.FromInt64(-1)`            | `FFFFFFFFFFFFFFFF` | Lua carries an address above `long.MaxValue` as a negative integer, and this keeps the bits                    |
+| `Address.Parse("10")`              | `16`               | Text is always hexadecimal, so there is no decimal form                                                        |
+| `Address.TryParse("12 34", out _)` | `False`            | No separators, no sign, no overflow past 64 bits                                                               |
 
 To call a binding, convert with `unchecked((nuint)address.ToUInt64())`. In the other direction,
 `Address.FromUInt64(value)` accepts the `nuint` a binding returns.
@@ -315,15 +315,15 @@ print(my_plugin_player_health())
 print(my_plugin_entity("game.exe+2A5000"))
 ```
 
-| Lua call | Result |
-|---|---|
-| `my_plugin_attach("game.exe")` | `true` when Cheat Engine has a process open afterwards |
-| `my_plugin_bump("game.exe", "game.exe+1234", 10)` | The new value: `110` when the address held `100` |
-| `my_plugin_bump(...)` on an unknown symbol | A Lua error that starts with `CESDK.Lua.Calls.LuaException:` and carries Cheat Engine's own message |
-| `my_plugin_bump(...)` on an unreadable address | `System.InvalidOperationException: <symbol> is not readable.` |
-| `my_plugin_bump(...)` when the write is refused | `System.InvalidOperationException: Cheat Engine rejected the write.` |
-| `my_plugin_player_health()` | The health field, for example `250`. A null pointer on the way raises `The player pointer chain is not valid yet.` |
-| `my_plugin_entity("game.exe+2A5000")` | `Kobold: health=120, speed=3.5, mana=42.25` for an entity with those field values |
+| Lua call                                          | Result                                                                                                             |
+|---------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `my_plugin_attach("game.exe")`                    | `true` when Cheat Engine has a process open afterwards                                                             |
+| `my_plugin_bump("game.exe", "game.exe+1234", 10)` | The new value: `110` when the address held `100`                                                                   |
+| `my_plugin_bump(...)` on an unknown symbol        | A Lua error that starts with `CESDK.Lua.Calls.LuaException:` and carries Cheat Engine's own message                |
+| `my_plugin_bump(...)` on an unreadable address    | `System.InvalidOperationException: <symbol> is not readable.`                                                      |
+| `my_plugin_bump(...)` when the write is refused   | `System.InvalidOperationException: Cheat Engine rejected the write.`                                               |
+| `my_plugin_player_health()`                       | The health field, for example `250`. A null pointer on the way raises `The player pointer chain is not valid yet.` |
+| `my_plugin_entity("game.exe+2A5000")`             | `Kobold: health=120, speed=3.5, mana=42.25` for an entity with those field values                                  |
 
 ## Good to know
 

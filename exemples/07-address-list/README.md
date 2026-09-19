@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A `TableEditor` for Cheat Engine's address list, and a plugin that builds a "Player" group with Health, Mana and Gold |
-| **You learn** | Borrowed handles, setting properties from C#, enum names as text, calling methods with arguments, and the main thread rule |
-| **You need** | [06 · Value scans](../06-value-scans/README.md) for the object call pattern |
+|                            |                                                                                                                                                                                                                                      |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A `TableEditor` for Cheat Engine's address list, and a plugin that builds a "Player" group with Health, Mana and Gold                                                                                                                |
+| **You learn**              | Borrowed handles, setting properties from C#, enum names as text, calling methods with arguments, and the main thread rule                                                                                                           |
+| **You need**               | [06 · Value scans](../06-value-scans/README.md) for the object call pattern                                                                                                                                                          |
 | **Cheat Engine functions** | `getAddressList`, and the members `createMemoryRecord`, `getMemoryRecordByDescription`, `Count` and its indexer on the list, `Description`, `Address`, `VarType`, `Value`, `Active`, `IsGroupHeader` and `appendToEntry` on a record |
 
 ## Objective
@@ -38,11 +38,11 @@ Guides 05 and 06 created objects, so they owned them and disposed them. Here Che
 `[CEOwned]` attribute names that intent: it marks a return value, a property or a parameter as an object that Cheat
 Engine owns and you do not dispose. In your code it is a plain `CEObject` handle with no `Owned<T>` around it.
 
-| Object | Created by | Owner | Do you dispose it |
-|---|---|---|---|
-| The address list | `getAddressList()` | Cheat Engine | No |
-| A record | `createMemoryRecord()` on the list | The list | No |
-| A scan or a result list | `createMemScan()` and `createFoundList(...)` | You | Yes, see [06](../06-value-scans/README.md) |
+| Object                  | Created by                                   | Owner        | Do you dispose it                          |
+|-------------------------|----------------------------------------------|--------------|--------------------------------------------|
+| The address list        | `getAddressList()`                           | Cheat Engine | No                                         |
+| A record                | `createMemoryRecord()` on the list           | The list     | No                                         |
+| A scan or a result list | `createMemScan()` and `createFoundList(...)` | You          | Yes, see [06](../06-value-scans/README.md) |
 
 A `CEObject` is only the native pointer. It has no `Dispose` and no destroy member, so a borrowed handle cannot free
 what Cheat Engine still uses.
@@ -180,16 +180,16 @@ internal static class TableEditor
 
 The table below lists the record members the editor uses and how each one travels.
 
-| Member | Kind | Type | How the editor sets or reads it |
-|---|---|---|---|
-| `Description` | Property | Text | `TrySetProperty<StringMarshaller, string>` |
-| `Address` | Property | Text | An expression Cheat Engine interprets, such as `game.exe+2A0` or `game.exe+2A0+4` |
-| `VarType` | Property | Text | The name from `CEEnumNames.ToCEName`, such as `vtDword`, pushed through `Utf8Marshaller` |
-| `Value` | Property | Text | `TryGetProperty<StringMarshaller, string>`. The value in string form |
-| `Active` | Property | Boolean | `true` activates the record, which freezes a value record |
-| `IsGroupHeader` | Property | Boolean | Turns a record into a group header |
-| `appendToEntry(parent)` | Method | Record | Pushes the parent, then `TryCallMethod(L, name, 1, 0)` |
-| `[index]` on the list | Indexer | Record | `TryGetIndex(L, i)` with Cheat Engine's own zero based index |
+| Member                  | Kind     | Type    | How the editor sets or reads it                                                          |
+|-------------------------|----------|---------|------------------------------------------------------------------------------------------|
+| `Description`           | Property | Text    | `TrySetProperty<StringMarshaller, string>`                                               |
+| `Address`               | Property | Text    | An expression Cheat Engine interprets, such as `game.exe+2A0` or `game.exe+2A0+4`        |
+| `VarType`               | Property | Text    | The name from `CEEnumNames.ToCEName`, such as `vtDword`, pushed through `Utf8Marshaller` |
+| `Value`                 | Property | Text    | `TryGetProperty<StringMarshaller, string>`. The value in string form                     |
+| `Active`                | Property | Boolean | `true` activates the record, which freezes a value record                                |
+| `IsGroupHeader`         | Property | Boolean | Turns a record into a group header                                                       |
+| `appendToEntry(parent)` | Method   | Record  | Pushes the parent, then `TryCallMethod(L, name, 1, 0)`                                   |
+| `[index]` on the list   | Indexer  | Record  | `TryGetIndex(L, i)` with Cheat Engine's own zero based index                             |
 
 ### 3. Export it
 
@@ -275,14 +275,14 @@ print(my_plugin_add_record("Gold found", "00007FF6A1DC4F10", "vtDword"))
 print(my_plugin_list_records())
 ```
 
-| Lua call | Result |
-|---|---|
-| `my_plugin_build_player_group("game.exe+2A0")` | `true` after a "Player" group with Health, Mana and Gold appears in the table |
-| `my_plugin_freeze("Health", true)` | `true` when the record exists. Use `false` as the second argument to release it |
-| `my_plugin_record_value("Health")` | The value as text, or `nil` when no record has that description |
-| `my_plugin_add_record("Gold found", "00007FF6A1DC4F10", "vtDword")` | `true`. An unknown type name such as `"vtBogus"` gives `false` |
-| `my_plugin_record_count()` | The number of records in the list |
-| `my_plugin_list_records()` | Every record as `Description=Value`, joined with `; ` |
+| Lua call                                                            | Result                                                                          |
+|---------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `my_plugin_build_player_group("game.exe+2A0")`                      | `true` after a "Player" group with Health, Mana and Gold appears in the table   |
+| `my_plugin_freeze("Health", true)`                                  | `true` when the record exists. Use `false` as the second argument to release it |
+| `my_plugin_record_value("Health")`                                  | The value as text, or `nil` when no record has that description                 |
+| `my_plugin_add_record("Gold found", "00007FF6A1DC4F10", "vtDword")` | `true`. An unknown type name such as `"vtBogus"` gives `false`                  |
+| `my_plugin_record_count()`                                          | The number of records in the list                                               |
+| `my_plugin_list_records()`                                          | Every record as `Description=Value`, joined with `; `                           |
 
 The last step of the gold counter story from guide 06 is one call:
 `my_plugin_add_record("Gold", my_plugin_scan_result(0), "vtDword")`.

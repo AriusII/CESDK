@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | Nothing new: you break a plugin on purpose, read the message, and fix it |
-| **You learn** | What each rule says, why it exists, how to fix it, and how to set its severity |
-| **You need** | A plugin project like the one in [01 · Your first plugin](../01-first-plugin/README.md) |
-| **Covers** | `CESDK0001`, `CESDK0002`, `CESDK0004`, `CESDK1004`, `CESDK2001` to `CESDK2004`, `CESDK9101` |
+|               |                                                                                             |
+|---------------|---------------------------------------------------------------------------------------------|
+| **You build** | Nothing new: you break a plugin on purpose, read the message, and fix it                    |
+| **You learn** | What each rule says, why it exists, how to fix it, and how to set its severity              |
+| **You need**  | A plugin project like the one in [01 · Your first plugin](../01-first-plugin/README.md)     |
+| **Covers**    | `CESDK0001`, `CESDK0002`, `CESDK0004`, `CESDK1004`, `CESDK2001` to `CESDK2004`, `CESDK9101` |
 
 ## Objective
 
@@ -31,26 +31,26 @@ explains the cause.
 
 ## Find the rule fast
 
-| What you see | Rule |
-|---|---|
-| Cheat Engine refuses the DLL, or the plugin is missing from the list | `CESDK0001` or `CESDK0002` |
-| A Lua global does not exist after the plugin is enabled | `CESDK2001`, `CESDK2002` or `CESDK2003` |
-| A `[LuaGlobal]` method reports `CS8795`, a missing implementation | `CESDK2004`, `CESDK2001` or `CESDK2002`: each one stops the generator from writing the body |
-| `CS0426` on a name that starts with `CESDK.` | `CESDK0004` |
-| A hand written native callback that can end Cheat Engine | `CESDK1004` |
-| The build stops on `PlatformTarget=x86` | `CESDK9101` |
-| `CS9057` in the build | Not a CESDK rule: the .NET SDK is older than 10.0.401, so the analyzers and generators do not load |
+| What you see                                                         | Rule                                                                                               |
+|----------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Cheat Engine refuses the DLL, or the plugin is missing from the list | `CESDK0001` or `CESDK0002`                                                                         |
+| A Lua global does not exist after the plugin is enabled              | `CESDK2001`, `CESDK2002` or `CESDK2003`                                                            |
+| A `[LuaGlobal]` method reports `CS8795`, a missing implementation    | `CESDK2004`, `CESDK2001` or `CESDK2002`: each one stops the generator from writing the body        |
+| `CS0426` on a name that starts with `CESDK.`                         | `CESDK0004`                                                                                        |
+| A hand written native callback that can end Cheat Engine             | `CESDK1004`                                                                                        |
+| The build stops on `PlatformTarget=x86`                              | `CESDK9101`                                                                                        |
+| `CS9057` in the build                                                | Not a CESDK rule: the .NET SDK is older than 10.0.401, so the analyzers and generators do not load |
 
-| Rule | Title | Severity | Code fix |
-|---|---|---|---|
-| [`CESDK0001`](../../analyzers/docs/CESDK0001.md) | Plugin class cannot be constructed by the generated entry point | Error | Three actions |
-| [`CESDK0002`](../../analyzers/docs/CESDK0002.md) | More than one plugin class in the assembly | Error | None |
-| [`CESDK0004`](../../analyzers/docs/CESDK0004.md) | Plugin assembly declares a namespace under `CESDK` | Warning | None |
-| [`CESDK1004`](../../analyzers/docs/CESDK1004.md) | Exception can escape an `[UnmanagedCallersOnly]` method | Warning | Wrap the body in try/catch |
-| [`CESDK2001`](../../analyzers/docs/CESDK2001.md) | Lua binding needs `AllowUnsafeBlocks` | Error | None |
-| [`CESDK2002`](../../analyzers/docs/CESDK2002.md) | Type cannot receive a generated Lua binding part | Error | None |
-| [`CESDK2003`](../../analyzers/docs/CESDK2003.md) | `[LuaFunction]` method cannot be exported by a generated thunk | Error | None |
-| [`CESDK2004`](../../analyzers/docs/CESDK2004.md) | `[LuaGlobal]` method cannot receive a generated body | Error | None |
+| Rule                                             | Title                                                           | Severity | Code fix                   |
+|--------------------------------------------------|-----------------------------------------------------------------|----------|----------------------------|
+| [`CESDK0001`](../../analyzers/docs/CESDK0001.md) | Plugin class cannot be constructed by the generated entry point | Error    | Three actions              |
+| [`CESDK0002`](../../analyzers/docs/CESDK0002.md) | More than one plugin class in the assembly                      | Error    | None                       |
+| [`CESDK0004`](../../analyzers/docs/CESDK0004.md) | Plugin assembly declares a namespace under `CESDK`              | Warning  | None                       |
+| [`CESDK1004`](../../analyzers/docs/CESDK1004.md) | Exception can escape an `[UnmanagedCallersOnly]` method         | Warning  | Wrap the body in try/catch |
+| [`CESDK2001`](../../analyzers/docs/CESDK2001.md) | Lua binding needs `AllowUnsafeBlocks`                           | Error    | None                       |
+| [`CESDK2002`](../../analyzers/docs/CESDK2002.md) | Type cannot receive a generated Lua binding part                | Error    | None                       |
+| [`CESDK2003`](../../analyzers/docs/CESDK2003.md) | `[LuaFunction]` method cannot be exported by a generated thunk  | Error    | None                       |
+| [`CESDK2004`](../../analyzers/docs/CESDK2004.md) | `[LuaGlobal]` method cannot receive a generated body            | Error    | None                       |
 
 `CESDK0xxx` covers the plugin shape, `CESDK1xxx` covers runtime safety and `CESDK2xxx` covers the input of the
 generators. Identifiers are never renumbered or reused.
@@ -65,6 +65,7 @@ Cheat Engine calls one fixed entry point. The generated code creates your plugin
 class needs a constructor with no required arguments.
 
 <!-- expect: CESDK0001 -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 using CESDK.Hosting.Plugin;
@@ -86,6 +87,7 @@ arguments (parameterless, or with only optional/'params' parameters): the genera
 ```
 
 <!-- alone -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 using CESDK.Hosting.Plugin;
@@ -114,6 +116,7 @@ One DLL is one plugin: Cheat Engine calls a single entry point per assembly, and
 two classes.
 
 <!-- expect: CESDK0002 -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 using CESDK.Hosting.Plugin;
@@ -158,6 +161,7 @@ The generated entry point is a class named `CESDK` in the namespace `CESDK`. Ins
 simple name `CESDK` means that class, so the SDK namespaces stop resolving.
 
 <!-- expect: CESDK0004 -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 using CESDK.Hosting.Plugin;
@@ -183,6 +187,7 @@ type instead of the SDK namespaces. Use a different root namespace.
 appears inside it:
 
 <!-- expect: CS0426 -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 
@@ -204,6 +209,7 @@ error CS0426: The type name 'Hosting' does not exist in the type 'CESDK'
 Use a root namespace that does not start with `CESDK`, and set `<RootNamespace>` in the project file to match.
 
 <!-- alone -->
+
 ```csharp
 using CESDK.Annotations.Plugin;
 using CESDK.Hosting.Plugin;
@@ -231,6 +237,7 @@ process, and the process is Cheat Engine with your session in it. The generated 
 rule is for the callbacks you write by hand (see [08 · Running Lua](../08-running-lua/README.md)).
 
 <!-- expect: CESDK1004 -->
+
 ```csharp
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -308,6 +315,7 @@ The generator adds a second `partial` part to the type that holds your binding, 
 must be a non generic, non `file` class or struct declared `partial`.
 
 <!-- expect: CESDK2002 -->
+
 ```csharp
 using CESDK.Annotations.Lua;
 
@@ -343,6 +351,7 @@ The thunk reads a fixed number of typed arguments, so the method needs a shape i
 rules at once, and each one is reported.
 
 <!-- expect: CESDK2003 -->
+
 ```csharp
 using CESDK.Annotations.Lua;
 
@@ -364,6 +373,7 @@ argument count
 Two methods with the same Lua name are both dropped from the registration table, so neither exists in Lua:
 
 <!-- expect: CESDK2003 -->
+
 ```csharp
 using CESDK.Annotations.Lua;
 
@@ -404,6 +414,7 @@ A `[LuaGlobal]` method is the declaration half of a `partial` method. The genera
 shape is valid: arguments first, `out` results last, and a `bool` return for the Try form.
 
 <!-- expect: CS8795 -->
+
 ```csharp
 using CESDK.Annotations.Lua;
 
@@ -426,6 +437,7 @@ cause: a declaration with `out` results is a Try form and must return `bool`. A 
 without a body shows the rule directly:
 
 <!-- expect: CESDK2004 -->
+
 ```csharp
 using CESDK.Annotations.Lua;
 
@@ -478,10 +490,10 @@ error CESDK9101: MyPlugin targets PlatformTarget=x86. Cheat Engine hosts plugins
 
 ## Where and when you see them
 
-| Rule | Reported |
-|---|---|
-| `CESDK0001`, `CESDK1004`, `CESDK2001`, `CESDK2002`, `CESDK2004` | While you type and in the build |
-| `CESDK0002`, `CESDK0004`, `CESDK2003` | In the build and in full solution analysis only. They need the whole project, for example to count plugin classes or compare Lua names |
+| Rule                                                            | Reported                                                                                                                               |
+|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `CESDK0001`, `CESDK1004`, `CESDK2001`, `CESDK2002`, `CESDK2004` | While you type and in the build                                                                                                        |
+| `CESDK0002`, `CESDK0004`, `CESDK2003`                           | In the build and in full solution analysis only. They need the whole project, for example to count plugin classes or compare Lua names |
 
 ## Set a severity
 
@@ -498,12 +510,12 @@ when no code inside it uses the simple name `CESDK` and every `using` sits above
 
 ## Project switches the package reads
 
-| Property | Default | Effect |
-|---|---|---|
-| `CesdkGenerateEntryPoint` | `true` | Set it to `false` to write `CESDK.CESDK` by hand. `CESDK0001` and `CESDK0002` are then not reported, because you define the entry point |
-| `AllowUnsafeBlocks` | `true`, only while your project leaves it unset | The Lua binding generator needs it (`CESDK2001`) |
-| `EnableDynamicLoading` | `true`, only while your project leaves it unset | Copies the referenced assemblies next to the plugin and writes its `.runtimeconfig.json` |
-| `PlatformTarget` | Your choice | `x86` fails the build with `CESDK9101` |
+| Property                  | Default                                         | Effect                                                                                                                                  |
+|---------------------------|-------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `CesdkGenerateEntryPoint` | `true`                                          | Set it to `false` to write `CESDK.CESDK` by hand. `CESDK0001` and `CESDK0002` are then not reported, because you define the entry point |
+| `AllowUnsafeBlocks`       | `true`, only while your project leaves it unset | The Lua binding generator needs it (`CESDK2001`)                                                                                        |
+| `EnableDynamicLoading`    | `true`, only while your project leaves it unset | Copies the referenced assemblies next to the plugin and writes its `.runtimeconfig.json`                                                |
+| `PlatformTarget`          | Your choice                                     | `x86` fails the build with `CESDK9101`                                                                                                  |
 
 ## Promise
 

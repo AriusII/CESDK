@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A "Signature Tools" plugin with a signature finder and a patcher |
-| **You learn** | Signature syntax, protection flags, reading a Cheat Engine list object safely, and unique scans |
-| **You need** | [04 · Memory](../04-memory/README.md) for `Address` and the binding pattern |
-| **Cheat Engine functions** | `AOBScan`, `AOBScanUnique`, `AOBScanModuleUnique`, `autoAssemble` |
+|                            |                                                                                                 |
+|----------------------------|-------------------------------------------------------------------------------------------------|
+| **You build**              | A "Signature Tools" plugin with a signature finder and a patcher                                |
+| **You learn**              | Signature syntax, protection flags, reading a Cheat Engine list object safely, and unique scans |
+| **You need**               | [04 · Memory](../04-memory/README.md) for `Address` and the binding pattern                     |
+| **Cheat Engine functions** | `AOBScan`, `AOBScanUnique`, `AOBScanModuleUnique`, `autoAssemble`                               |
 
 ## Objective
 
@@ -40,18 +40,18 @@ ordinary managed data and frees the list in the same block, so the object never 
 A signature is a string of hexadecimal bytes. `??` matches any byte, so you keep the bytes that identify the code and
 wildcard the bytes that change between builds.
 
-| Piece | Meaning | Example |
-|---|---|---|
-| Hex byte | Matches exactly that byte | `89 83` |
-| `??` | Matches any byte | `89 83 ?? ?? 00 00` |
+| Piece    | Meaning                   | Example             |
+|----------|---------------------------|---------------------|
+| Hex byte | Matches exactly that byte | `89 83`             |
+| `??`     | Matches any byte          | `89 83 ?? ?? 00 00` |
 
 The optional arguments narrow the search:
 
-| Argument | Values | Example |
-|---|---|---|
-| Protection flags | Three letters, `X` executable, `W` writable and `C` copy on write. Each one takes a prefix: `+` must be set, `-` must not be set, `*` does not matter. An empty string searches everything | `+X-C-W` finds read only code |
-| Alignment type | `0` no check, `1` the address is divisible by the parameter, `2` the address ends with the parameter | `1` |
-| Alignment parameter | Text: the divisor for type 1, the last digits for type 2 | `"4"` |
+| Argument            | Values                                                                                                                                                                                     | Example                       |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Protection flags    | Three letters, `X` executable, `W` writable and `C` copy on write. Each one takes a prefix: `+` must be set, `-` must not be set, `*` does not matter. An empty string searches everything | `+X-C-W` finds read only code |
+| Alignment type      | `0` no check, `1` the address is divisible by the parameter, `2` the address ends with the parameter                                                                                       | `1`                           |
+| Alignment parameter | Text: the divisor for type 1, the last digits for type 2                                                                                                                                   | `"4"`                         |
 
 Empty strings and `0` are valid values. Pass them explicitly when you have nothing to say.
 
@@ -142,15 +142,15 @@ flowchart LR
     E --> F["List of Address<br/>plain managed data"]
 ```
 
-| Step | Why |
-|---|---|
+| Step                            | Why                                                                                      |
+|---------------------------------|------------------------------------------------------------------------------------------|
 | `using LuaFrame frame = new(L)` | Restores the Lua stack on every exit, including the early returns and a thrown exception |
-| `ThrowIfFailed(L)` | A failed call becomes a `LuaException` with Cheat Engine's own message |
-| `CEObject.TryRead` | Reads the native object pointer from the result. A `nil` result gives an empty list |
-| `Owned<CEObject>` | Takes ownership, so `Dispose` calls `destroy()` exactly once, on the main thread |
-| `TryGetIndex(L, i)` | Uses Cheat Engine's own zero based index. Each item is hexadecimal text |
-| `Address.TryRead` | Accepts hexadecimal text and Lua integers, so the list reads the same either way |
-| `using LuaFrame item` | Keeps the stack flat while the loop reads one item per turn |
+| `ThrowIfFailed(L)`              | A failed call becomes a `LuaException` with Cheat Engine's own message                   |
+| `CEObject.TryRead`              | Reads the native object pointer from the result. A `nil` result gives an empty list      |
+| `Owned<CEObject>`               | Takes ownership, so `Dispose` calls `destroy()` exactly once, on the main thread         |
+| `TryGetIndex(L, i)`             | Uses Cheat Engine's own zero based index. Each item is hexadecimal text                  |
+| `Address.TryRead`               | Accepts hexadecimal text and Lua integers, so the list reads the same either way         |
+| `using LuaFrame item`           | Keeps the stack flat while the loop reads one item per turn                              |
 
 ### 4. Export it and patch with it
 
@@ -230,11 +230,11 @@ print(where)
 print(my_plugin_write_bytes(where, "89 83 A4 00 00 00"))
 ```
 
-| Lua call | Result |
-|---|---|
-| `my_plugin_find_signature(pattern)` | `no match`, `unique match at 00007FF6A1DC4F10`, or `3 matches, first at 00007FF6A1DC4F10` |
+| Lua call                                                      | Result                                                                                                           |
+|---------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `my_plugin_find_signature(pattern)`                           | `no match`, `unique match at 00007FF6A1DC4F10`, or `3 matches, first at 00007FF6A1DC4F10`                        |
 | `my_plugin_patch("game.exe", signature, "90 90 90 90 90 90")` | The patched address such as `00007FF6A1DC4F10`, or `nil` when the module scan found nothing or the script failed |
-| `my_plugin_write_bytes(address, "89 83 A4 00 00 00")` | `true` when the script ran. `false` when the address text is not hexadecimal |
+| `my_plugin_write_bytes(address, "89 83 A4 00 00 00")`         | `true` when the script ran. `false` when the address text is not hexadecimal                                     |
 
 ## Unique is not proof
 
@@ -244,13 +244,13 @@ signature, run the full `Signatures.Scan` and require a count of one, which is w
 
 A signature that survives updates follows a few habits:
 
-| Habit | Why |
-|---|---|
+| Habit                                                                   | Why                                                              |
+|-------------------------------------------------------------------------|------------------------------------------------------------------|
 | Keep the opcode bytes and wildcard displacements and absolute addresses | Offsets and addresses move between builds, and opcodes rarely do |
-| Use twelve or more bytes with several fixed anchors | A short pattern matches unrelated code |
-| Scan one module with `AOBScanModuleUnique` | Fewer bytes to search, and no matches in other modules |
-| Add `+X` when the target is code | Data that happens to hold the same bytes is skipped |
-| Check the count after every game update | A count other than one means the signature drifted |
+| Use twelve or more bytes with several fixed anchors                     | A short pattern matches unrelated code                           |
+| Scan one module with `AOBScanModuleUnique`                              | Fewer bytes to search, and no matches in other modules           |
+| Add `+X` when the target is code                                        | Data that happens to hold the same bytes is skipped              |
+| Check the count after every game update                                 | A count other than one means the signature drifted               |
 
 > [!WARNING]
 > A patch writes into the target process. Try it on a disposable process first, keep the original bytes next to the new

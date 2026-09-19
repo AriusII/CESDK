@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A value monitor that samples on a worker thread, and a long task that keeps the window responsive |
-| **You learn** | `MainThread.Invoke`, `IsMainThread`, `ProcessMessages`, `CheckSynchronize`, `PluginContext` |
-| **You need** | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md) |
+|                            |                                                                                                      |
+|----------------------------|------------------------------------------------------------------------------------------------------|
+| **You build**              | A value monitor that samples on a worker thread, and a long task that keeps the window responsive    |
+| **You learn**              | `MainThread.Invoke`, `IsMainThread`, `ProcessMessages`, `CheckSynchronize`, `PluginContext`          |
+| **You need**               | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)                  |
 | **Cheat Engine functions** | `getAddressSafe`, `readInteger`, `print`, and `synchronize`, which `MainThread.Invoke` calls for you |
 
 ## Objective
@@ -32,11 +32,11 @@ your worker threads never touch Cheat Engine directly.
 
 ## Where your code runs
 
-| Code | Thread |
-|---|---|
-| `OnEnable` and `OnDisable` | The main thread |
-| A `[LuaFunction]` called from the Lua Engine window or a cheat table script | The main thread |
-| A thread you start: `Thread`, `Task.Run`, a timer callback | Never the main thread |
+| Code                                                                        | Thread                |
+|-----------------------------------------------------------------------------|-----------------------|
+| `OnEnable` and `OnDisable`                                                  | The main thread       |
+| A `[LuaFunction]` called from the Lua Engine window or a cheat table script | The main thread       |
+| A thread you start: `Thread`, `Task.Run`, a timer callback                  | Never the main thread |
 
 ```mermaid
 sequenceDiagram
@@ -260,15 +260,15 @@ var moduleBase = Sync.Run(() => Ce.TryGetAddress("game.exe", out var address) ? 
 
 ## The rules
 
-| Rule | Why | Where you saw it |
-|---|---|---|
-| Cheat Engine state, objects and scanners belong to the main thread | None of them is thread safe | `Invoke` around `ReadInt32` |
-| Reach the main thread only through `MainThread.Invoke` | It is the one supported hop, inline when you are already there | Steps 2 and 4 |
-| Keep a check and the action it guards in the same `Invoke` | Another thread can change Cheat Engine between two hops | One `ReadInt32` call, one hop |
-| Catch every exception on a thread you start | An escaped exception ends the process | `Sample` |
-| Pump when the main thread waits or works long | It keeps queued calls and window messages moving | `OnDisable` and `CountMatches` |
-| Stop your threads in `OnDisable` | After it returns, `Invoke` and the Lua state are gone | `_stop.Cancel()` and `Join` |
-| Dispose an `Owned<T>` on the main thread | `Dispose` calls the object's `destroy()` | See [05 · AOB scans](../05-aob-scans/README.md) |
+| Rule                                                               | Why                                                            | Where you saw it                                |
+|--------------------------------------------------------------------|----------------------------------------------------------------|-------------------------------------------------|
+| Cheat Engine state, objects and scanners belong to the main thread | None of them is thread safe                                    | `Invoke` around `ReadInt32`                     |
+| Reach the main thread only through `MainThread.Invoke`             | It is the one supported hop, inline when you are already there | Steps 2 and 4                                   |
+| Keep a check and the action it guards in the same `Invoke`         | Another thread can change Cheat Engine between two hops        | One `ReadInt32` call, one hop                   |
+| Catch every exception on a thread you start                        | An escaped exception ends the process                          | `Sample`                                        |
+| Pump when the main thread waits or works long                      | It keeps queued calls and window messages moving               | `OnDisable` and `CountMatches`                  |
+| Stop your threads in `OnDisable`                                   | After it returns, `Invoke` and the Lua state are gone          | `_stop.Cancel()` and `Join`                     |
+| Dispose an `Owned<T>` on the main thread                           | `Dispose` calls the object's `destroy()`                       | See [05 · AOB scans](../05-aob-scans/README.md) |
 
 ## Facts about the thread and the plugin
 
@@ -276,14 +276,14 @@ var moduleBase = Sync.Run(() => Ce.TryGetAddress("game.exe", out var address) ? 
 `CheatEnginePlugin.Context` between the start of `OnEnable` and the end of `OnDisable`, or from `PluginHost.Context`,
 which returns `null` while the plugin is disabled.
 
-| Member | Meaning |
-|---|---|
-| `PluginId` | The id Cheat Engine assigned in the enable callback |
-| `Epoch` | The runtime epoch of this enable. Every enable advances it |
-| `MainThreadId` | The managed thread id of the main thread |
-| `IsMainThread` | Whether the calling thread is the main thread |
-| `IsCurrent` | Whether this is still the context of the current enable |
-| `HasProcessMessages`, `HasCheckSynchronize` | Whether the host supplied the two message loop slots |
+| Member                                      | Meaning                                                    |
+|---------------------------------------------|------------------------------------------------------------|
+| `PluginId`                                  | The id Cheat Engine assigned in the enable callback        |
+| `Epoch`                                     | The runtime epoch of this enable. Every enable advances it |
+| `MainThreadId`                              | The managed thread id of the main thread                   |
+| `IsMainThread`                              | Whether the calling thread is the main thread              |
+| `IsCurrent`                                 | Whether this is still the context of the current enable    |
+| `HasProcessMessages`, `HasCheckSynchronize` | Whether the host supplied the two message loop slots       |
 
 `MainThread.IsMainThread` reads the same fact and is `false` while the plugin is disabled. Keep no `PluginContext` and
 no Lua reference across a disable: the next enable publishes a new context and a new epoch, and `IsCurrent` tells the

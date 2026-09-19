@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A remote call helper, a checked DLL injector and an Auto Assembler patcher |
-| **You learn** | Allocating and freeing target memory, `try` and `finally` around it, positional call shapes, validating text before it reaches a script |
-| **You need** | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) |
+|                            |                                                                                                                                            |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A remote call helper, a checked DLL injector and an Auto Assembler patcher                                                                 |
+| **You learn**              | Allocating and freeing target memory, `try` and `finally` around it, positional call shapes, validating text before it reaches a script    |
+| **You need**               | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md)                                             |
 | **Cheat Engine functions** | `allocateMemory`, `deAlloc`, `fullAccess`, `writeString`, `writeSmallInteger`, `executeCode`, `executeCodeEx`, `injectDLL`, `autoAssemble` |
 
 ## Objective
@@ -173,14 +173,14 @@ print(my_plugin_inject("helper.dll"))                    -- true, or false when 
 
 ## Good to know
 
-| Topic | Detail |
-|---|---|
-| Failure of a call | `TryExecuteCodeEx` returns `false` when the call raises or returns `nil`, and the helper then still frees the buffer |
-| Timeout | `executeCodeEx` documents its timeout in milliseconds. A timeout of 0 does not wait and does not free the call memory, so the helper never uses it |
-| Exceptions | A `[LuaFunction]` that throws reaches Lua as an error, here `System.InvalidOperationException: The remote call failed.`, and the buffer is already freed by then |
-| Script text | `autoAssemble` runs whatever it receives. `Patch` accepts only symbol characters and two digit hex bytes, so a caller cannot smuggle a second command into the script |
-| Protection | `fullAccess(address, size)` makes a block writable and executable. Use it on your own allocation, never on the game's code |
-| Path | `Path.GetFullPath` resolves a relative name against the current directory of Cheat Engine, so pass an absolute path when you can |
+| Topic             | Detail                                                                                                                                                                |
+|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Failure of a call | `TryExecuteCodeEx` returns `false` when the call raises or returns `nil`, and the helper then still frees the buffer                                                  |
+| Timeout           | `executeCodeEx` documents its timeout in milliseconds. A timeout of 0 does not wait and does not free the call memory, so the helper never uses it                    |
+| Exceptions        | A `[LuaFunction]` that throws reaches Lua as an error, here `System.InvalidOperationException: The remote call failed.`, and the buffer is already freed by then      |
+| Script text       | `autoAssemble` runs whatever it receives. `Patch` accepts only symbol characters and two digit hex bytes, so a caller cannot smuggle a second command into the script |
+| Protection        | `fullAccess(address, size)` makes a block writable and executable. Use it on your own allocation, never on the game's code                                            |
+| Path              | `Path.GetFullPath` resolves a relative name against the current directory of Cheat Engine, so pass an absolute path when you can                                      |
 
 > [!WARNING]
 > Injecting a DLL and calling target code are operations on someone else's process. Do them only against software you

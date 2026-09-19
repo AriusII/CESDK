@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
+|               |                                                                                                            |
+|---------------|------------------------------------------------------------------------------------------------------------|
 | **You build** | A log that goes to three places at once: the debugger output, a rolling file and Cheat Engine's Lua output |
-| **You learn** | `HostLog`, sinks, levels, and the failure signal of every layer |
-| **You need** | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md) |
-| **Covers** | `HostLog`, `IHostLogSink`, `HostLogLevel`, `DebugOutputLogSink`, `LuaException`, `LuaStatus` |
+| **You learn** | `HostLog`, sinks, levels, and the failure signal of every layer                                            |
+| **You need**  | The bindings from [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md)                        |
+| **Covers**    | `HostLog`, `IHostLogSink`, `HostLogLevel`, `DebugOutputLogSink`, `LuaException`, `LuaStatus`               |
 
 ## Objective
 
@@ -31,14 +31,14 @@ the SDK catches every failure at the boundary and writes it to one seam, `HostLo
 
 ## How `HostLog` works
 
-| Member | Role |
-|---|---|
-| `HostLog.Write(level, message, exception)` | Sends one entry to the current sink. Nothing happens when the level is below the minimum |
-| `HostLog.MinimumLevel` | The lowest level that is written. The default is `Information` |
-| `HostLog.IsEnabled(level)` | Whether an entry at that level would be written. Guard costly message building with it |
-| `HostLog.Sink` | The destination, an `IHostLogSink`. Assigning `null` restores the default |
-| `HostLogLevel` | `Trace`, `Information`, `Warning`, `Error`. `Trace` adds every lifecycle call of the host |
-| `DebugOutputLogSink` | The default sink. It writes to the Windows debugger output |
+| Member                                     | Role                                                                                      |
+|--------------------------------------------|-------------------------------------------------------------------------------------------|
+| `HostLog.Write(level, message, exception)` | Sends one entry to the current sink. Nothing happens when the level is below the minimum  |
+| `HostLog.MinimumLevel`                     | The lowest level that is written. The default is `Information`                            |
+| `HostLog.IsEnabled(level)`                 | Whether an entry at that level would be written. Guard costly message building with it    |
+| `HostLog.Sink`                             | The destination, an `IHostLogSink`. Assigning `null` restores the default                 |
+| `HostLogLevel`                             | `Trace`, `Information`, `Warning`, `Error`. `Trace` adds every lifecycle call of the host |
+| `DebugOutputLogSink`                       | The default sink. It writes to the Windows debugger output                                |
 
 The host logs every failure that it turns into `FALSE` or `0` for Cheat Engine, and your own code writes to the same
 place. To read the default output, start Sysinternals DebugView, turn on **Capture > Capture Global Win32** and filter
@@ -117,10 +117,10 @@ push the file past the limit, the sink shifts every archive up by one, drops the
 lock covers the roll and the write, so entries from several threads never interleave. With a 200 byte limit and two
 archives, twenty short entries end like this:
 
-| File | Holds |
-|---|---|
-| `plugin.log` | The newest entries, including `entry 20` |
-| `plugin.log.1` | The entries before them |
+| File           | Holds                                                                                          |
+|----------------|------------------------------------------------------------------------------------------------|
+| `plugin.log`   | The newest entries, including `entry 20`                                                       |
+| `plugin.log.1` | The entries before them                                                                        |
 | `plugin.log.2` | The oldest entries still kept. `entry 01` to `entry 12` are gone, and no file passes 200 bytes |
 
 Each line has a timestamp in UTC, the level and the message. An exception follows on the next lines, in full:
@@ -239,11 +239,11 @@ public sealed class TrainerLogPlugin : CheatEnginePlugin
 
 After the plugin is enabled, every host message and every `HostLog.Write` of yours reaches all three places:
 
-| Destination | Read it in |
-|---|---|
+| Destination     | Read it in                                                              |
+|-----------------|-------------------------------------------------------------------------|
 | Debugger output | DebugView, filtered for `CESDK`, or a debugger attached to Cheat Engine |
-| Rolling file | `%APPDATA%\TrainerLog\plugin.log` |
-| Lua output | The Lua Engine window |
+| Rolling file    | `%APPDATA%\TrainerLog\plugin.log`                                       |
+| Lua output      | The Lua Engine window                                                   |
 
 Restore the default sink in `OnDisable` so that the next enable starts from a known state.
 
@@ -266,16 +266,16 @@ flowchart TD
     F --> J[You catch it and write it to HostLog]
 ```
 
-| Layer | Signal | What you do |
-|---|---|---|
-| `[LuaGlobal]` Try form | `false` | Treat it as a normal outcome, such as an unreadable address |
-| `[LuaGlobal]` throwing form | `LuaException` with the cause in `Message` | Catch it where you can recover or add context, and log it |
-| `LuaState` members that start with `Try` | A `LuaStatus` and one error value | Read the text with `LuaError.FromStack`, or throw with `status.ThrowIfFailed(L)` |
-| `CEObject` typed members | `false` | Check the result, like any Try form |
-| A `[LuaFunction]` body that throws | A Lua error such as `System.DivideByZeroException: Attempted to divide by zero.` | Validate arguments for a friendlier message, and log inside the method if you want a record |
-| `OnEnable` throws | The host logs the exception, and Cheat Engine is told the enable failed | Throw on purpose when setup cannot finish |
-| `OnDisable` throws | Logged, and reported as a failed disable, but the plugin is disabled anyway | Avoid it. Release what you own first |
-| A thread you started | Nothing catches it, and the process ends | Catch every exception at the top of the thread |
+| Layer                                    | Signal                                                                           | What you do                                                                                 |
+|------------------------------------------|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `[LuaGlobal]` Try form                   | `false`                                                                          | Treat it as a normal outcome, such as an unreadable address                                 |
+| `[LuaGlobal]` throwing form              | `LuaException` with the cause in `Message`                                       | Catch it where you can recover or add context, and log it                                   |
+| `LuaState` members that start with `Try` | A `LuaStatus` and one error value                                                | Read the text with `LuaError.FromStack`, or throw with `status.ThrowIfFailed(L)`            |
+| `CEObject` typed members                 | `false`                                                                          | Check the result, like any Try form                                                         |
+| A `[LuaFunction]` body that throws       | A Lua error such as `System.DivideByZeroException: Attempted to divide by zero.` | Validate arguments for a friendlier message, and log inside the method if you want a record |
+| `OnEnable` throws                        | The host logs the exception, and Cheat Engine is told the enable failed          | Throw on purpose when setup cannot finish                                                   |
+| `OnDisable` throws                       | Logged, and reported as a failed disable, but the plugin is disabled anyway      | Avoid it. Release what you own first                                                        |
+| A thread you started                     | Nothing catches it, and the process ends                                         | Catch every exception at the top of the thread                                              |
 
 A `[LuaFunction]` failure reaches the script that called it and is not written to `HostLog` by itself.
 

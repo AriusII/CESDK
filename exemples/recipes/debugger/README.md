@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A write watcher: two Lua functions start and stop a breakpoint, a handler counts the hits |
-| **You learn** | Debugger bindings, enum arguments as numbers, the `debugger_onBreakpoint` global, reading register globals |
-| **You need** | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) |
+|                            |                                                                                                                                                                                                                |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A write watcher: two Lua functions start and stop a breakpoint, a handler counts the hits                                                                                                                      |
+| **You learn**              | Debugger bindings, enum arguments as numbers, the `debugger_onBreakpoint` global, reading register globals                                                                                                     |
+| **You need**               | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md)                                                                                                                 |
 | **Cheat Engine functions** | `debugProcess`, `debug_isDebugging`, `debug_isBroken`, `debug_setBreakpoint`, `debug_removeBreakpoint`, `debug_continueFromBreakpoint`, `debug_getBreakpointList`, `detachIfPossible`, `debugger_onBreakpoint` |
 
 ## Objective
@@ -257,25 +257,25 @@ sequenceDiagram
 
 ## Good to know
 
-| Topic | Detail |
-|---|---|
+| Topic        | Detail                                                                                                                                                                                                                      |
+|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Return value | `debugger_onBreakpoint` returns 0 to let Cheat Engine update its interface, and anything else when your handler already continued. The watcher returns 0 while it is idle, so a breakpoint you set by hand behaves as usual |
-| One handler | Cheat Engine has a single `debugger_onBreakpoint` global, so a table script that defines its own and this plugin overwrite each other. `UnregisterLuaFunctions` sets it back to `nil` |
-| Cleanup | `OnDisable` calls `Stop`, so no breakpoint outlives the plugin. `detachIfPossible` detaches the debugger only when the watcher started it |
-| Threads | The counters use `Interlocked` and `Volatile`, so the handler stays correct whichever thread Cheat Engine calls it from |
-| Stepping | `debug_continueFromBreakpoint` also accepts `ContinueMethod.StepInto` (1) and `StepOver` (2) |
+| One handler  | Cheat Engine has a single `debugger_onBreakpoint` global, so a table script that defines its own and this plugin overwrite each other. `UnregisterLuaFunctions` sets it back to `nil`                                       |
+| Cleanup      | `OnDisable` calls `Stop`, so no breakpoint outlives the plugin. `detachIfPossible` detaches the debugger only when the watcher started it                                                                                   |
+| Threads      | The counters use `Interlocked` and `Volatile`, so the handler stays correct whichever thread Cheat Engine calls it from                                                                                                     |
+| Stepping     | `debug_continueFromBreakpoint` also accepts `ContinueMethod.StepInto` (1) and `StepOver` (2)                                                                                                                                |
 
 The rest of the debugger surface follows the same pattern: bind the function you need.
 
-| Feature | Cheat Engine function |
-|---|---|
-| Interfaces | `debugProcess`, `debug_getCurrentDebuggerInterface` |
-| Breakpoints | `debug_setBreakpoint`, `debug_setBreakpointForThread`, `debug_removeBreakpoint`, `debug_getBreakpointList` |
-| Context and registers | `debugger_onBreakpoint` and the register globals, `debug_getContext`, `debug_setContext` |
-| Stepping | `debug_continueFromBreakpoint`, `debug_isStepping` |
-| Threads | `debug_breakThread`, `debug_addThreadToNoBreakList` |
-| XMM and LBR | `debug_getXMMPointer`, `debug_setLastBranchRecording`, `debug_getLastBranchRecord` |
-| Detach | `detachIfPossible` |
+| Feature               | Cheat Engine function                                                                                      |
+|-----------------------|------------------------------------------------------------------------------------------------------------|
+| Interfaces            | `debugProcess`, `debug_getCurrentDebuggerInterface`                                                        |
+| Breakpoints           | `debug_setBreakpoint`, `debug_setBreakpointForThread`, `debug_removeBreakpoint`, `debug_getBreakpointList` |
+| Context and registers | `debugger_onBreakpoint` and the register globals, `debug_getContext`, `debug_setContext`                   |
+| Stepping              | `debug_continueFromBreakpoint`, `debug_isStepping`                                                         |
+| Threads               | `debug_breakThread`, `debug_addThreadToNoBreakList`                                                        |
+| XMM and LBR           | `debug_getXMMPointer`, `debug_setLastBranchRecording`, `debug_getLastBranchRecord`                         |
+| Detach                | `detachIfPossible`                                                                                         |
 
 ## Promise
 

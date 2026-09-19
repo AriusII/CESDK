@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A profile keeper: `my_plugin_save_profile`, `my_plugin_load_profile` and an autosave that follows the plugin lifecycle |
-| **You learn** | Binding `loadTable` and `saveTable`, the difference between replacing and merging, and validating file names that come from Lua |
-| **You need** | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) |
-| **Cheat Engine functions** | `loadTable`, `saveTable`, `getAddressList` |
+|                            |                                                                                                                                 |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A profile keeper: `my_plugin_save_profile`, `my_plugin_load_profile` and an autosave that follows the plugin lifecycle          |
+| **You learn**              | Binding `loadTable` and `saveTable`, the difference between replacing and merging, and validating file names that come from Lua |
+| **You need**               | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md)                                                            |
+| **Cheat Engine functions** | `loadTable`, `saveTable`, `getAddressList`                                                                                      |
 
 ## Objective
 
@@ -182,10 +182,10 @@ print(my_plugin_save_profile("../evil"))             -- false: a name cannot lea
 
 `loadTable(fileName, merge)` decides what happens to the table that is open.
 
-| `merge` | Result | Use it for |
-|---|---|---|
+| `merge` | Result                                                | Use it for                                     |
+|---------|-------------------------------------------------------|------------------------------------------------|
 | `false` | The open table is cleared, then the profile is loaded | Restoring an exact state, such as the autosave |
-| `true` | The profile is added to the open table | Layering a shared set of entries over your own |
+| `true`  | The profile is added to the open table                | Layering a shared set of entries over your own |
 
 The autosave loads with `merge: false` and only when the table is empty, so it can never discard work. It also saves
 only a table that has entries, so an empty session never overwrites a good autosave. Merging keeps everything that is

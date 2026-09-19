@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A symbol book that registers `Player.Health` and friends, and a watcher that waits for `game.exe` |
-| **You learn** | The symbol functions, cleaning up on disable, and polling from a worker thread |
-| **You need** | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) and the thread rules of [09 · The main thread](../../09-main-thread/README.md) |
+|                            |                                                                                                                                                                          |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A symbol book that registers `Player.Health` and friends, and a watcher that waits for `game.exe`                                                                        |
+| **You learn**              | The symbol functions, cleaning up on disable, and polling from a worker thread                                                                                           |
+| **You need**               | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) and the thread rules of [09 · The main thread](../../09-main-thread/README.md)                      |
 | **Cheat Engine functions** | `getAddress`, `getAddressSafe`, `getNameFromAddress`, `registerSymbol`, `unregisterSymbol`, `reinitializeSymbolhandler`, `getModuleSize`, `inModule`, `getRTTIClassName` |
 
 ## Objective

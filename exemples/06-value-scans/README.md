@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A `ValueScanner` that owns one scan session, and a plugin that drives it from Lua |
-| **You learn** | The scan lifecycle, owning two Cheat Engine objects, calling methods with many arguments, enum arguments as numbers |
-| **You need** | [05 · AOB scans](../05-aob-scans/README.md) for the object call pattern |
+|                            |                                                                                                                                                                                                        |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A `ValueScanner` that owns one scan session, and a plugin that drives it from Lua                                                                                                                      |
+| **You learn**              | The scan lifecycle, owning two Cheat Engine objects, calling methods with many arguments, enum arguments as numbers                                                                                    |
+| **You need**               | [05 · AOB scans](../05-aob-scans/README.md) for the object call pattern                                                                                                                                |
 | **Cheat Engine functions** | `createMemScan`, `createFoundList`, and the scan object members `firstScan`, `nextScan`, `newScan`, `waitTillDone`, plus the result list members `initialize`, `deinitialize`, `Count` and its indexer |
 
 ## Objective
@@ -48,16 +48,16 @@ stateDiagram-v2
 
 Each rule below is a line of code in the scanner.
 
-| Rule | Why |
-|---|---|
-| Create the scan and its result list together and keep both | Cheat Engine ties result ownership to that one list object |
-| Call `deinitialize` on the list before every scan | A scan rewrites the results, so the list must let go of them first |
-| Call `waitTillDone` before you read anything | Results are incomplete while the scan runs |
-| Call `initialize` on the same list after the scan | It opens the fresh results for reading |
-| Never destroy and recreate the list between scans | This can break Cheat Engine's result ownership and crash the host |
-| Destroy the list only when you dispose the scan | The list belongs to the scan for its whole life |
-| Dispose on the main thread, before `OnDisable` returns | After that `Dispose` cannot reach Cheat Engine, and the objects leak |
-| Never destroy the scan of the Cheat Engine window | `getCurrentMemscan` returns Cheat Engine's own object. Create your own with `createMemScan` |
+| Rule                                                       | Why                                                                                         |
+|------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Create the scan and its result list together and keep both | Cheat Engine ties result ownership to that one list object                                  |
+| Call `deinitialize` on the list before every scan          | A scan rewrites the results, so the list must let go of them first                          |
+| Call `waitTillDone` before you read anything               | Results are incomplete while the scan runs                                                  |
+| Call `initialize` on the same list after the scan          | It opens the fresh results for reading                                                      |
+| Never destroy and recreate the list between scans          | This can break Cheat Engine's result ownership and crash the host                           |
+| Destroy the list only when you dispose the scan            | The list belongs to the scan for its whole life                                             |
+| Dispose on the main thread, before `OnDisable` returns     | After that `Dispose` cannot reach Cheat Engine, and the objects leak                        |
+| Never destroy the scan of the Cheat Engine window          | `getCurrentMemscan` returns Cheat Engine's own object. Create your own with `createMemScan` |
 
 ### 2. Write the scanner
 
@@ -198,14 +198,14 @@ internal sealed class ValueScanner : IDisposable
 
 How the pieces fit:
 
-| Piece | What it does |
-|---|---|
-| `Owned<CEObject>` twice | The scanner created both objects, so it owns both. `Dispose` destroys each one once |
-| The `try` and `catch` in the constructor | If the list cannot be created, the scan that already exists is destroyed before the exception leaves |
-| `EnumMarshaller<TEnum>.Push` | Pushes the enum as the number Cheat Engine's `soExactValue` or `vtDword` constant holds |
-| `TryCallMethod(L, name, 14, 0)` | Calls the method with the 14 values on top of the stack and keeps no result |
-| `AlignmentFor` | An aligned scan only looks at addresses divisible by the size of the value, four for a `dword` |
-| `TryGetIndex(L, index)` | Reads the result at Cheat Engine's own zero based index, as hexadecimal text that `Address.TryRead` accepts |
+| Piece                                    | What it does                                                                                                |
+|------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `Owned<CEObject>` twice                  | The scanner created both objects, so it owns both. `Dispose` destroys each one once                         |
+| The `try` and `catch` in the constructor | If the list cannot be created, the scan that already exists is destroyed before the exception leaves        |
+| `EnumMarshaller<TEnum>.Push`             | Pushes the enum as the number Cheat Engine's `soExactValue` or `vtDword` constant holds                     |
+| `TryCallMethod(L, name, 14, 0)`          | Calls the method with the 14 values on top of the stack and keeps no result                                 |
+| `AlignmentFor`                           | An aligned scan only looks at addresses divisible by the size of the value, four for a `dword`              |
+| `TryGetIndex(L, index)`                  | Reads the result at Cheat Engine's own zero based index, as hexadecimal text that `Address.TryRead` accepts |
 
 > [!NOTE]
 > Function arguments take enum values as numbers, which `EnumMarshaller<TEnum>` pushes. Properties that Cheat Engine
@@ -314,24 +314,24 @@ Each `next` scan keeps only the candidates that match, so the count falls. When 
 type, use `my_plugin_scan_changed()` after an action that should change it, and repeat until the list is short. Add the
 winner to the table with the [address list guide](../07-address-list/README.md).
 
-| Lua call | Result |
-|---|---|
-| `my_plugin_scan_first(100)` | The number of candidates. It is large on a first scan |
-| `my_plugin_scan_next(90)` and `my_plugin_scan_changed()` | The number of candidates left |
-| `my_plugin_scan_count()` | The current number of candidates, `0` before the first scan |
-| `my_plugin_scan_result(0)` | An address such as `00007FF6A1DC4F10`, or `nil` when the index is out of range |
-| `my_plugin_scan_reset()` | Clears the results and keeps the objects for the next first scan |
-| `my_plugin_scan_next(90)` before any first scan | `System.InvalidOperationException: Run my_plugin_scan_first before a next scan.` |
+| Lua call                                                 | Result                                                                           |
+|----------------------------------------------------------|----------------------------------------------------------------------------------|
+| `my_plugin_scan_first(100)`                              | The number of candidates. It is large on a first scan                            |
+| `my_plugin_scan_next(90)` and `my_plugin_scan_changed()` | The number of candidates left                                                    |
+| `my_plugin_scan_count()`                                 | The current number of candidates, `0` before the first scan                      |
+| `my_plugin_scan_result(0)`                               | An address such as `00007FF6A1DC4F10`, or `nil` when the index is out of range   |
+| `my_plugin_scan_reset()`                                 | Clears the results and keeps the objects for the next first scan                 |
+| `my_plugin_scan_next(90)` before any first scan          | `System.InvalidOperationException: Run my_plugin_scan_first before a next scan.` |
 
 ## Choose the scan option
 
-| `ScanOption` | Works in | Needs input |
-|---|---|---|
-| `UnknownValue` | First scan | No |
-| `ExactValue`, `BiggerThan`, `SmallerThan` | First and next | One value |
-| `ValueBetween` | First and next | Two values |
-| `IncreasedValue`, `DecreasedValue`, `Changed`, `Unchanged` | Next scan | No |
-| `IncreasedValueBy`, `DecreasedValueBy` | Next scan | One value |
+| `ScanOption`                                               | Works in       | Needs input |
+|------------------------------------------------------------|----------------|-------------|
+| `UnknownValue`                                             | First scan     | No          |
+| `ExactValue`, `BiggerThan`, `SmallerThan`                  | First and next | One value   |
+| `ValueBetween`                                             | First and next | Two values  |
+| `IncreasedValue`, `DecreasedValue`, `Changed`, `Unchanged` | Next scan      | No          |
+| `IncreasedValueBy`, `DecreasedValueBy`                     | Next scan      | One value   |
 
 `ValueScanner.FirstScan` runs an exact value scan to keep the example short. To offer more, add a `ScanOption` argument
 and a second input to the same method, and push them in the same positions.

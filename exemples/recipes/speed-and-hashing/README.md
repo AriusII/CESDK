@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A slow motion toggle that remembers the previous speed, a binary verifier and two text converters |
-| **You learn** | Speed bindings, hashing a file, a string or a memory range, restoring state in `OnDisable`, nullable `out string` results |
-| **You need** | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) |
-| **Cheat Engine functions** | `speedhack_setSpeed`, `speedhack_getSpeed`, `stringToMD5String`, `md5file`, `md5memory`, `ansiToUTF8`, `UTF8ToAnsi` |
+|                            |                                                                                                                           |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A slow motion toggle that remembers the previous speed, a binary verifier and two text converters                         |
+| **You learn**              | Speed bindings, hashing a file, a string or a memory range, restoring state in `OnDisable`, nullable `out string` results |
+| **You need**               | The bindings pattern from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md)                            |
+| **Cheat Engine functions** | `speedhack_setSpeed`, `speedhack_getSpeed`, `stringToMD5String`, `md5file`, `md5memory`, `ansiToUTF8`, `UTF8ToAnsi`       |
 
 ## Objective
 
@@ -159,15 +159,15 @@ print(my_plugin_fingerprint("hello"))
 
 ## Good to know
 
-| Topic | Detail |
-|---|---|
-| Nullable results | A `string?` result that is `null` reaches Lua as `nil`, so a failed hash is `nil` and never an empty string |
-| Comparison | MD5 output is hexadecimal text, so the comparison ignores case |
-| Path | `md5file` takes a path the way Cheat Engine resolves it. Pass the full path of the executable when the working folder is unclear |
-| Memory | `my_plugin_verify_memory` hashes a range of the target, which detects a patched module that the file on disk does not show |
-| Text | Cheat Engine's own windows mostly show UTF-8, while some of its functions expect ANSI. `my_plugin_to_utf8` and `my_plugin_to_ansi` convert at that seam |
-| Byte tables | Cheat Engine's byte table converters, such as `dwordToByteTable`, need no binding. In C# use `BitConverter` or `BinaryPrimitives` on a `Span<byte>` |
-| Whole system | `dbvm_speedhack_setSpeed` also exists and slows the whole system clock. It is covered in the [DBVM recipe](../dbvm/README.md) |
+| Topic            | Detail                                                                                                                                                  |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Nullable results | A `string?` result that is `null` reaches Lua as `nil`, so a failed hash is `nil` and never an empty string                                             |
+| Comparison       | MD5 output is hexadecimal text, so the comparison ignores case                                                                                          |
+| Path             | `md5file` takes a path the way Cheat Engine resolves it. Pass the full path of the executable when the working folder is unclear                        |
+| Memory           | `my_plugin_verify_memory` hashes a range of the target, which detects a patched module that the file on disk does not show                              |
+| Text             | Cheat Engine's own windows mostly show UTF-8, while some of its functions expect ANSI. `my_plugin_to_utf8` and `my_plugin_to_ansi` convert at that seam |
+| Byte tables      | Cheat Engine's byte table converters, such as `dwordToByteTable`, need no binding. In C# use `BitConverter` or `BinaryPrimitives` on a `Span<byte>`     |
+| Whole system     | `dbvm_speedhack_setSpeed` also exists and slows the whole system clock. It is covered in the [DBVM recipe](../dbvm/README.md)                           |
 
 ## Promise
 

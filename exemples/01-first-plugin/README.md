@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A plugin that exports one Lua function, `greet` |
+|               |                                                                                    |
+|---------------|------------------------------------------------------------------------------------|
+| **You build** | A plugin that exports one Lua function, `greet`                                    |
 | **You learn** | The project file, the plugin class, the build output and how Cheat Engine loads it |
-| **You need** | .NET SDK 10.0.401 or later, Cheat Engine 7.7, Windows x64 |
+| **You need**  | .NET SDK 10.0.401 or later, Cheat Engine 7.7, Windows x64                          |
 
 ## Objective
 
@@ -84,13 +84,13 @@ internal static partial class Commands
 }
 ```
 
-| Piece | What it does |
-|---|---|
-| `[CheatEnginePlugin("My Plugin")]` | Marks the one plugin class and sets the name Cheat Engine lists in its plugin settings |
-| `CheatEnginePlugin` | The base class. `OnEnable` and `OnDisable` are abstract and run on Cheat Engine's main thread |
-| `LuaRuntime.AcquireState()` | Hands you the Lua state of the calling thread. Call it once per operation and never store it |
-| `[LuaFunction("greet")]` | Exports a static method as the Lua global `greet` |
-| `partial` on `Commands` | Lets the generator add `RegisterLuaFunctions` and `UnregisterLuaFunctions` to your type |
+| Piece                              | What it does                                                                                  |
+|------------------------------------|-----------------------------------------------------------------------------------------------|
+| `[CheatEnginePlugin("My Plugin")]` | Marks the one plugin class and sets the name Cheat Engine lists in its plugin settings        |
+| `CheatEnginePlugin`                | The base class. `OnEnable` and `OnDisable` are abstract and run on Cheat Engine's main thread |
+| `LuaRuntime.AcquireState()`        | Hands you the Lua state of the calling thread. Call it once per operation and never store it  |
+| `[LuaFunction("greet")]`           | Exports a static method as the Lua global `greet`                                             |
+| `partial` on `Commands`            | Lets the generator add `RegisterLuaFunctions` and `UnregisterLuaFunctions` to your type       |
 
 > [!IMPORTANT]
 > Do not touch CESDK from a constructor, a field initializer or a static constructor. The Lua runtime attaches after
@@ -183,13 +183,13 @@ enable gets a fresh Lua runtime epoch, so never keep a Lua reference or a `Plugi
 <details>
 <summary><strong>If nothing happens</strong></summary>
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| The plugin is not listed after **Add new** | The plugin DLL is separated from the CESDK assemblies | Keep the whole `bin/Release/net10.0` folder together |
-| Cheat Engine refuses the DLL | No generated entry point | Check for `CESDK0001` or `CESDK0002` in the build output, and that `CesdkGenerateEntryPoint` is not `false` |
-| The plugin ticks and `greet` is `nil` | `OnEnable` threw, so Cheat Engine was told the enable failed | Read the log below: the host logs every failed enable |
-| Cheat Engine cannot start the runtime | The x64 .NET 10 runtimes are missing or the roll-forward setting is not applied | Run `dotnet --list-runtimes` and apply step 4 |
-| `CS9057` in the build | The .NET SDK is older than 10.0.401 | Update the SDK. The generators are built against Roslyn 5.9 |
+| Symptom                                    | Likely cause                                                                    | Fix                                                                                                         |
+|--------------------------------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| The plugin is not listed after **Add new** | The plugin DLL is separated from the CESDK assemblies                           | Keep the whole `bin/Release/net10.0` folder together                                                        |
+| Cheat Engine refuses the DLL               | No generated entry point                                                        | Check for `CESDK0001` or `CESDK0002` in the build output, and that `CesdkGenerateEntryPoint` is not `false` |
+| The plugin ticks and `greet` is `nil`      | `OnEnable` threw, so Cheat Engine was told the enable failed                    | Read the log below: the host logs every failed enable                                                       |
+| Cheat Engine cannot start the runtime      | The x64 .NET 10 runtimes are missing or the roll-forward setting is not applied | Run `dotnet --list-runtimes` and apply step 4                                                               |
+| `CS9057` in the build                      | The .NET SDK is older than 10.0.401                                             | Update the SDK. The generators are built against Roslyn 5.9                                                 |
 
 To see the host's log, start Sysinternals DebugView, turn on **Capture > Capture Global Win32** and filter for
 `CESDK`. Entries start with `[CESDK.Hosting] Information:` or `[CESDK.Hosting] Error:`.

@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | `my_plugin_attach`, `my_plugin_attach_foreground` and `my_plugin_report`, plus a pause scope |
-| **You learn** | Binding the process functions, reading the module and thread tables, and pausing safely |
-| **You need** | The `[LuaGlobal]` basics from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) |
+|                            |                                                                                                                                                                                              |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | `my_plugin_attach`, `my_plugin_attach_foreground` and `my_plugin_report`, plus a pause scope                                                                                                 |
+| **You learn**              | Binding the process functions, reading the module and thread tables, and pausing safely                                                                                                      |
+| **You need**               | The `[LuaGlobal]` basics from [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md)                                                                                           |
 | **Cheat Engine functions** | `openProcess`, `getOpenedProcessID`, `getProcessIDFromProcessName`, `createProcess`, `pause`, `unpause`, `isPaused`, `getForegroundProcess`, `targetIs64Bit`, `getThreadlist`, `enumModules` |
 
 ## Objective

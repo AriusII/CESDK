@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A trainer for a fictional game, `game.exe`, with five Lua commands |
-| **You learn** | How the pieces fit: registration, bindings, a pointer chain, a worker that hops to the main thread, a clean shutdown |
-| **You need** | The plugin project of [01](../01-first-plugin/README.md), and the ideas of guides [02](../02-lua-functions/README.md) to [09](../09-main-thread/README.md) |
-| **Cheat Engine functions** | `openProcess`, `getOpenedProcessID`, `getAddressSafe`, `readQword`, `readInteger`, `writeInteger` |
+|                            |                                                                                                                                                            |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A trainer for a fictional game, `game.exe`, with five Lua commands                                                                                         |
+| **You learn**              | How the pieces fit: registration, bindings, a pointer chain, a worker that hops to the main thread, a clean shutdown                                       |
+| **You need**               | The plugin project of [01](../01-first-plugin/README.md), and the ideas of guides [02](../02-lua-functions/README.md) to [09](../09-main-thread/README.md) |
+| **Cheat Engine functions** | `openProcess`, `getOpenedProcessID`, `getAddressSafe`, `readQword`, `readInteger`, `writeInteger`                                                          |
 
 ## Objective
 
@@ -126,7 +126,8 @@ internal static partial class Ce
 ```
 
 `openProcess` is a throwing form, because failing to open the game is worth reporting. `getAddressSafe` is a Try form,
-because a module that is not loaded yet is a normal answer. See [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md).
+because a module that is not loaded yet is a normal answer.
+See [03 · Calling Cheat Engine](../03-calling-cheat-engine/README.md).
 
 ### 3. The player
 
@@ -252,7 +253,8 @@ belongs to the main thread. The attachment check and the write happen inside one
 
 `Stop` is the part that is easy to get wrong. It runs on the main thread, and the loop may be waiting for that same
 thread inside `Invoke`. A plain `Wait()` would freeze both. Pumping `CheckSynchronize` lets the queued call run, the
-loop sees the cancellation on its next tick, and `Stop` returns. See [09 · The main thread](../09-main-thread/README.md).
+loop sees the cancellation on its next tick, and `Stop` returns.
+See [09 · The main thread](../09-main-thread/README.md).
 
 ### 5. The Lua commands
 
@@ -345,22 +347,22 @@ print(gold_god_mode(false)) -- false
 
 ## What can go wrong
 
-| Situation | What this plugin does |
-|---|---|
-| The game is not running | `gold_attach` reports it, and `gold_status` says there is no player |
-| The game restarts | Nothing is cached, so the next command follows the pointer chain again |
-| A player calls `gold_give("x")` | Lua reports `bad argument #1 (integer expected, got string)` and keeps running |
-| An address is unreadable | The Try form returns `false` and the command answers with a message or `-1` |
-| The plugin is disabled while god mode is on | `OnDisable` stops the loop and pumps the main thread until it ends |
-| The loop throws | The exception is logged through `HostLog` and the loop ends |
+| Situation                                   | What this plugin does                                                          |
+|---------------------------------------------|--------------------------------------------------------------------------------|
+| The game is not running                     | `gold_attach` reports it, and `gold_status` says there is no player            |
+| The game restarts                           | Nothing is cached, so the next command follows the pointer chain again         |
+| A player calls `gold_give("x")`             | Lua reports `bad argument #1 (integer expected, got string)` and keeps running |
+| An address is unreadable                    | The Try form returns `false` and the command answers with a message or `-1`    |
+| The plugin is disabled while god mode is on | `OnDisable` stops the loop and pumps the main thread until it ends             |
+| The loop throws                             | The exception is logged through `HostLog` and the loop ends                    |
 
 ## Make it yours
 
 - [ ] Replace the constants in `Player.cs` with the values you find for your target.
 - [ ] Find `PlayerPointerOffset` from a byte signature instead of a fixed offset:
-      [05 · AOB scans](../05-aob-scans/README.md).
+  [05 · AOB scans](../05-aob-scans/README.md).
 - [ ] Show the values as records in Cheat Engine's table:
-      [07 · The address list](../07-address-list/README.md).
+  [07 · The address list](../07-address-list/README.md).
 - [ ] Send the log to a file: [10 · Logging and errors](../10-logging-and-errors/README.md).
 - [ ] Name the addresses with friendly symbols: [Symbols recipe](../recipes/symbols/README.md).
 

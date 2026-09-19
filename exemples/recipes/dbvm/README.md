@@ -12,11 +12,11 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A status probe, a physical memory reader and a physical write watcher that all degrade gracefully |
-| **You learn** | Try forms as a design rule, reading a Lua byte table into a `Span<byte>`, cleaning up a watch in `OnDisable` |
-| **You need** | The Lua toolkit from [08 · Running Lua](../../08-running-lua/README.md): `LuaState`, `LuaFrame` and the sequence helpers |
+|                            |                                                                                                                                                                                                      |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A status probe, a physical memory reader and a physical write watcher that all degrade gracefully                                                                                                    |
+| **You learn**              | Try forms as a design rule, reading a Lua byte table into a `Span<byte>`, cleaning up a watch in `OnDisable`                                                                                         |
+| **You need**               | The Lua toolkit from [08 · Running Lua](../../08-running-lua/README.md): `LuaState`, `LuaFrame` and the sequence helpers                                                                             |
 | **Cheat Engine functions** | `dbk_initialized`, `dbvm_initialized`, `dbvm_initialize`, `dbvm_getMemory`, `dbk_getPhysicalAddress`, `dbvm_readPhysicalMemory`, `dbvm_watch_writes`, `dbvm_watch_retrievelog`, `dbvm_watch_disable` |
 
 > [!CAUTION]
@@ -234,14 +234,14 @@ print(my_plugin_watch_stop())                        -- true
 
 ## Good to know
 
-| Topic | Detail |
-|---|---|
-| Never loads | The probe uses `dbk_initialized` and `dbvm_initialized`. Loading the driver is `dbk_initialize`, which you call only when the user asks |
-| Watch options | The third argument of `dbvm_watch_writes` is a bit field. This recipe passes 0, the plain watch. Bit 5 grows the log instead of discarding entries |
-| Reads and executes | `dbvm_watch_reads` and `dbvm_watch_executes` take the same arguments, so a binding is one more declaration |
-| Log entries | `dbvm_watch_retrievelog` returns one table per event with the context at that moment. Count them with `RawSequenceCount`, or read fields with `TryGetField` |
-| System clock | `dbvm_speedhack_setSpeed` changes how fast the timestamp counter runs for the whole system, not for one process. Bind it only when that is what you want |
-| Cleanup | `OnDisable` stops the watch, so DBVM does not keep logging for a plugin that is gone |
+| Topic              | Detail                                                                                                                                                      |
+|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Never loads        | The probe uses `dbk_initialized` and `dbvm_initialized`. Loading the driver is `dbk_initialize`, which you call only when the user asks                     |
+| Watch options      | The third argument of `dbvm_watch_writes` is a bit field. This recipe passes 0, the plain watch. Bit 5 grows the log instead of discarding entries          |
+| Reads and executes | `dbvm_watch_reads` and `dbvm_watch_executes` take the same arguments, so a binding is one more declaration                                                  |
+| Log entries        | `dbvm_watch_retrievelog` returns one table per event with the context at that moment. Count them with `RawSequenceCount`, or read fields with `TryGetField` |
+| System clock       | `dbvm_speedhack_setSpeed` changes how fast the timestamp counter runs for the whole system, not for one process. Bind it only when that is what you want    |
+| Cleanup            | `OnDisable` stops the watch, so DBVM does not keep logging for a plugin that is gone                                                                        |
 
 ## Promise
 

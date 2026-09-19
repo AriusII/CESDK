@@ -12,12 +12,12 @@
 
 ---
 
-| | |
-|---|---|
-| **You build** | A patch you can switch on and off, a disassembly listing, an instruction size query and a line assembler |
-| **You learn** | Keeping an Auto Assembler `[DISABLE]` state alive with a registry reference, and reading Lua strings and tables into C# |
-| **You need** | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) and the toolkit tour of [08 · Running Lua](../../08-running-lua/README.md) |
-| **Cheat Engine functions** | `autoAssemble`, `assemble`, `disassemble`, `splitDisassembledString`, `getInstructionSize`, `getPreviousOpcode`, `getComment`, `setComment` |
+|                            |                                                                                                                                                 |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| **You build**              | A patch you can switch on and off, a disassembly listing, an instruction size query and a line assembler                                        |
+| **You learn**              | Keeping an Auto Assembler `[DISABLE]` state alive with a registry reference, and reading Lua strings and tables into C#                         |
+| **You need**               | [03 · Calling Cheat Engine](../../03-calling-cheat-engine/README.md) and the toolkit tour of [08 · Running Lua](../../08-running-lua/README.md) |
+| **Cheat Engine functions** | `autoAssemble`, `assemble`, `disassemble`, `splitDisassembledString`, `getInstructionSize`, `getPreviousOpcode`, `getComment`, `setComment`     |
 
 ## Objective
 
